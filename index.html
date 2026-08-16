@@ -17,6 +17,22 @@
     --muted:#8D95A3;
     --line:#252B36;
   }
+  html[data-theme="light"]{
+    --bg:#F3EEE1;
+    --bg2:#FFFFFF;
+    --gold:#B8842A;
+    --curtain:#B23A34;
+    --teal:#2C7A76;
+    --paper:#1C1A15;
+    --muted:#6B6355;
+    --line:#DDD3BB;
+  }
+  html[data-theme="light"] body::after{ box-shadow:inset 0 0 160px rgba(0,0,0,0.08); }
+  html[data-theme="light"] h1.title{
+    background:linear-gradient(180deg, #C79A3E 0%, var(--gold) 55%, #8A611E 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  body, .card, .ticket-window, button, .pg-btn{ transition:background-color .2s ease, color .2s ease, border-color .2s ease; }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
     background:
@@ -184,6 +200,43 @@
   }
   .download-app:hover{background:var(--teal);color:#0C0F14;}
 
+  .theme-toggle{
+    position:absolute;top:16px;right:16px;
+    background:var(--bg2);border:1px solid var(--line);
+    width:38px;height:38px;border-radius:50%;
+    font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .media-toggle{
+    display:inline-flex;gap:6px;margin-top:16px;
+    background:var(--bg2);border:1px solid var(--line);
+    padding:4px;border-radius:10px;
+  }
+  .mt-btn{
+    background:transparent;border:none;color:var(--muted);
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    padding:8px 16px;border-radius:7px;cursor:pointer;
+  }
+  .mt-btn.active{background:var(--gold);color:#241a05;font-weight:700;}
+
+  .input-with-mic{position:relative;}
+  .input-with-mic textarea{padding-right:52px;}
+  .mic-btn{
+    position:absolute;right:8px;bottom:8px;
+    width:36px;height:36px;border-radius:50%;
+    background:var(--bg2);border:1px solid var(--line);
+    color:var(--paper);font-size:16px;cursor:pointer;
+  }
+  .mic-btn.listening{
+    background:var(--curtain);border-color:var(--curtain);
+    animation:pulse 1s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(178,58,52,0.5);}
+    70%{box-shadow:0 0 0 12px rgba(178,58,52,0);}
+    100%{box-shadow:0 0 0 0 rgba(178,58,52,0);}
+  }
+
   .apikey-note{
     font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5;
   }
@@ -273,6 +326,18 @@
   }
   .modal-overview{font-size:14px;line-height:1.6;color:var(--paper);}
   .modal-cast{font-size:13.5px;color:var(--muted);line-height:1.6;}
+  .trailer-list, .ott-list{display:flex;flex-wrap:wrap;gap:8px;}
+  .trailer-pill{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--bg);border:1px solid var(--curtain);color:var(--curtain);
+    text-decoration:none;font-size:12px;padding:6px 12px;border-radius:20px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .ott-pill{
+    background:var(--bg);border:1px solid var(--teal);color:var(--teal);
+    font-size:12px;padding:6px 12px;border-radius:20px;
+    font-family:'JetBrains Mono',monospace;
+  }
   .card:hover{
     transform:translateY(-4px);
     border-color:rgba(232,185,74,0.4);
@@ -340,11 +405,17 @@
 <body>
 
 <header class="marquee">
+  <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()">🌙</button>
   <div class="presented-by">An original by <b>VISHESH BAINSLA</b></div>
   <div class="eyebrow">EK TICKET · POORI DUNIYA KI FILMEIN</div>
   <h1 class="title">MOODTALKIES</h1>
   <p class="tagline">Apna mood batayein — AI duniya bhar ki filmon se poster ke saath suggest karega.</p>
   <a href="https://github.com/luxsiradhna111-sudo/moviesite/raw/refs/heads/main/MoodTalkies%20by%20VISHESH%20BAINSLA.apk" class="download-app" download>⬇ Download Our Android App</a>
+
+  <div class="media-toggle">
+    <button class="mt-btn active" id="btnMovie" onclick="setMediaType('movie')">🎬 Movies</button>
+    <button class="mt-btn" id="btnTv" onclick="setMediaType('tv')">📺 TV Shows</button>
+  </div>
 </header>
 <div class="sprockets">
   <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
@@ -355,7 +426,10 @@
   <div class="ticket-window">
     <div style="margin-top:0;">
       <label>Aapka Mood ya Situation</label>
-      <textarea id="moodInput" rows="3" placeholder="Movie/franchise ka naam likhein (jaise 'The Conjuring' ya 'Spider-Man') YA apna mood batayein (jaise 'raat ko akela hu, thriller chahiye')"></textarea>
+      <div class="input-with-mic">
+        <textarea id="moodInput" rows="3" placeholder="Movie/franchise ka naam likhein (jaise 'The Conjuring' ya 'Spider-Man') YA apna mood batayein (jaise 'raat ko akela hu, thriller chahiye')"></textarea>
+        <button class="mic-btn" id="micBtn" onclick="startVoiceSearch()" title="Voice se bolein">🎤</button>
+      </div>
     </div>
 
     <div class="row">
@@ -405,7 +479,7 @@
     <div class="pager" id="upcomingPager"></div>
   </section>
 
-  <section class="block banned">
+  <section class="block banned" id="bannedSection">
     <div class="block-head"><h2>Banned Reel</h2><span class="count">CONTROVERSIAL / BANNED WORLDWIDE</span></div>
     <div class="grid" id="bannedGrid"><div class="empty">API key daal ke load karo →</div></div>
     <div class="pager" id="bannedPager"></div>
@@ -434,6 +508,14 @@ const GENRE_MAP = {
   drama:18, family:10751, fantasy:14, history:36, horror:27, music:10402,
   mystery:9648, romance:10749, "sci-fi":878, scifi:878, thriller:53, war:10752, western:37
 };
+
+const GENRE_MAP_TV = {
+  action:10759, adventure:10759, animation:16, comedy:35, crime:80, documentary:99,
+  drama:18, family:10751, fantasy:10765, history:36, horror:9648, music:10402,
+  mystery:9648, romance:10749, "sci-fi":10765, scifi:10765, thriller:9648, war:10768, western:37
+};
+
+let mediaType = 'movie'; // 'movie' or 'tv' — toggled by user
 
 const BANNED_LIST = [
   {title:"A Clockwork Orange", why:"UK mein 1970s se 1999 tak Kubrick ne khud withdraw kiya tha extreme violence controversy ke baad."},
@@ -487,11 +569,12 @@ async function loadUpcomingPage(page){
   if(!key || key === "PASTE_YOUR_TMDB_KEY_HERE") return;
   upcomingPageState = page;
   const {tmdbPage, range} = tmdbPageAndSlice(page);
+  const endpoint = mediaType === 'movie' ? '/movie/upcoming' : '/tv/on_the_air';
   try{
-    const up = await tmdbFetch(`/movie/upcoming?language=en-US&page=${tmdbPage}`, key);
+    const up = await tmdbFetch(`${endpoint}?language=en-US&page=${tmdbPage}`, key);
     const slice = up.results.slice(range[0], range[1]);
     renderGrid('upcomingGrid', slice.map(m=>({
-      id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+      id:m.id, title:m.title||m.name, year:((m.release_date||m.first_air_date)||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
     })));
     renderPager('upcomingPager', page, Math.min(up.total_pages*2, 40), loadUpcomingPage);
   }catch(e){ document.getElementById('upcomingGrid').innerHTML = '<div class="empty">Load nahi hua — key check karo</div>'; }
@@ -632,21 +715,21 @@ async function loadResultsPage(page){
   try{
     if(lastSearch.type === 'title'){
       const {tmdbPage, range} = tmdbPageAndSlice(page);
-      const ts = await tmdbFetch(`/search/movie?query=${encodeURIComponent(lastSearch.query)}&page=${tmdbPage}`, key);
+      const ts = await tmdbFetch(`/search/${lastSearch.mediaType||mediaType}?query=${encodeURIComponent(lastSearch.query)}&page=${tmdbPage}`, key);
       const slice = ts.results.slice(range[0], range[1]);
       renderGrid('resultsGrid', slice.map(m=>({
-        id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        id:m.id, title:m.title||m.name, year:((m.release_date||m.first_air_date)||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
       })));
       renderPager('resultsPager', page, Math.min(ts.total_pages*2, 40), loadResultsPage);
     } else {
       const {tmdbPage, range} = tmdbPageAndSlice(page);
-      let url = `/discover/movie?sort_by=${lastSearch.sortBy}&vote_count.gte=30&page=${tmdbPage}`;
+      let url = `/discover/${lastSearch.mediaType||mediaType}?sort_by=${lastSearch.sortBy}&vote_count.gte=30&page=${tmdbPage}`;
       if(lastSearch.genreIds) url += `&with_genres=${lastSearch.genreIds}`;
       if(lastSearch.lang) url += `&with_original_language=${lastSearch.lang}`;
       const results = await tmdbFetch(url, key);
       const slice = results.results.slice(range[0], range[1]);
       renderGrid('resultsGrid', slice.map(m=>({
-        id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        id:m.id, title:m.title||m.name, year:((m.release_date||m.first_air_date)||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
       })));
       renderPager('resultsPager', page, Math.min(results.total_pages*2, 40), loadResultsPage);
     }
@@ -662,6 +745,41 @@ function renderActorPage(page){
   renderPager('actorPager', page, Math.ceil((window.__actorCastFull||[]).length/10), renderActorPage);
 }
 
+const TRAILER_LANGS = [
+  {code:'en', label:'🇬🇧 English'}, {code:'hi', label:'🇮🇳 Hindi'},
+  {code:'ta', label:'🎬 Tamil'}, {code:'te', label:'🎬 Telugu'},
+  {code:'ko', label:'🇰🇷 Korean'}, {code:'ja', label:'🇯🇵 Japanese'},
+  {code:'fr', label:'🇫🇷 French'}, {code:'es', label:'🇪🇸 Spanish'},
+  {code:'zh', label:'🇨🇳 Chinese'}
+];
+
+async function fetchAllTrailers(id, key){
+  const calls = TRAILER_LANGS.map(l =>
+    tmdbFetch(`/${mediaType}/${id}/videos?language=${l.code}-${l.code.toUpperCase()}`, key)
+      .then(r => ({lang:l, videos:r.results || []}))
+      .catch(() => ({lang:l, videos:[]}))
+  );
+  const results = await Promise.all(calls);
+  const trailers = [];
+  const seenKeys = new Set();
+  results.forEach(r=>{
+    const t = r.videos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
+    if(t && !seenKeys.has(t.key)){ seenKeys.add(t.key); trailers.push({label:r.lang.label, key:t.key}); }
+  });
+  return trailers;
+}
+
+async function fetchOTT(id, key){
+  try{
+    const data = await tmdbFetch(`/${mediaType}/${id}/watch/providers`, key);
+    const region = (data.results && (data.results.IN || data.results.US)) || null;
+    if(!region) return [];
+    const all = [...(region.flatrate||[]), ...(region.rent||[]), ...(region.buy||[])];
+    const seen = new Set();
+    return all.filter(p=>{ if(seen.has(p.provider_name)) return false; seen.add(p.provider_name); return true; }).slice(0,8);
+  }catch(e){ return []; }
+}
+
 async function openMovieModal(id){
   if(!id) return;
   const key = getKey();
@@ -672,28 +790,51 @@ async function openMovieModal(id){
   document.body.style.overflow = 'hidden';
 
   try{
-    const m = await tmdbFetch(`/movie/${id}?append_to_response=credits`, key);
+    const m = await tmdbFetch(`/${mediaType}/${id}?append_to_response=credits`, key);
+    const title = m.title || m.name;
     const genres = (m.genres || []).map(g=>g.name).join(', ') || '—';
-    const year = (m.release_date || '').slice(0,4) || '—';
+    const year = ((m.release_date || m.first_air_date || '')).slice(0,4) || '—';
     const castNames = (m.credits && m.credits.cast || []).slice(0,6).map(c=>c.name).join(', ') || 'Info uplabdh nahi hai';
     const rating = m.vote_average ? m.vote_average.toFixed(1) : '—';
+    const runtime = m.runtime || (m.episode_run_time && m.episode_run_time[0]);
 
     body.innerHTML = `
-      <img class="modal-poster" src="${posterUrl(m.poster_path)}" alt="${m.title}"/>
+      <img class="modal-poster" src="${posterUrl(m.poster_path)}" alt="${title}"/>
       <div class="modal-content">
-        <div class="modal-title">${m.title}</div>
+        <div class="modal-title">${title}</div>
         <div class="modal-meta-row">
           <span>📅 ${year}</span>
           <span>★ ${rating}</span>
           <span>🎭 ${genres}</span>
-          ${m.runtime ? `<span>⏱ ${m.runtime} min</span>` : ''}
+          ${runtime ? `<span>⏱ ${runtime} min</span>` : ''}
         </div>
         <div class="modal-section-label">Cast</div>
         <div class="modal-cast">${castNames}</div>
         <div class="modal-section-label">Description</div>
         <div class="modal-overview">${m.overview || 'Description uplabdh nahi hai.'}</div>
+        <div class="modal-section-label">Trailers</div>
+        <div class="trailer-list" id="trailerList"><span class="empty">Load ho raha hai...</span></div>
+        <div class="modal-section-label">Kahan Dekhein (OTT)</div>
+        <div class="ott-list" id="ottList"><span class="empty">Load ho raha hai...</span></div>
       </div>
     `;
+
+    fetchAllTrailers(id, key).then(trailers=>{
+      const el = document.getElementById('trailerList');
+      if(!el) return;
+      el.innerHTML = trailers.length ? trailers.map(t=>
+        `<a class="trailer-pill" href="https://www.youtube.com/watch?v=${t.key}" target="_blank">▶ ${t.label}</a>`
+      ).join('') : '<span class="empty">Koi trailer nahi mila</span>';
+    });
+
+    fetchOTT(id, key).then(providers=>{
+      const el = document.getElementById('ottList');
+      if(!el) return;
+      el.innerHTML = providers.length ? providers.map(p=>
+        `<span class="ott-pill">${p.provider_name}</span>`
+      ).join('') : '<span class="empty">India mein OTT info uplabdh nahi hai</span>';
+    });
+
   }catch(e){
     body.innerHTML = '<div class="modal-content"><div class="empty">Details load nahi hui — dobara try karo.</div></div>';
   }
@@ -729,15 +870,16 @@ async function findMovies(){
   grid.parentElement.insertBefore(spinner, grid);
 
   try{
-    // Step 1: try treating the input as a movie/franchise title search
-    const titleSearch = await tmdbFetch(`/search/movie?query=${encodeURIComponent(mood)}`, key);
+    // Step 1: try treating the input as a title search (movie or TV, based on toggle)
+    const titleSearch = await tmdbFetch(`/search/${mediaType}?query=${encodeURIComponent(mood)}`, key);
     const strongMatch = titleSearch.results && titleSearch.results.find(m => m.vote_count > 20);
 
     if(strongMatch){
-      const details = await tmdbFetch(`/movie/${strongMatch.id}?append_to_response=similar`, key);
+      const details = await tmdbFetch(`/${mediaType}/${strongMatch.id}?append_to_response=similar`, key);
+      const matchTitle = strongMatch.title || strongMatch.name;
 
-      // Franchise/universe — A to Z all parts
-      if(details.belongs_to_collection){
+      // Franchise/universe — only exists for movies
+      if(mediaType === 'movie' && details.belongs_to_collection){
         const coll = await tmdbFetch(`/collection/${details.belongs_to_collection.id}`, key);
         const parts = (coll.parts || []).slice().sort((a,b)=>(a.release_date||'9999').localeCompare(b.release_date||'9999'));
         document.getElementById('franchiseTitle').textContent = coll.name;
@@ -747,47 +889,48 @@ async function findMovies(){
         franchiseSection.style.display = 'block';
       }
 
-      // Similar / same-vibe movies
+      // Similar / same-vibe content
       const sim = (details.similar && details.similar.results) || [];
       if(sim.length){
         renderGrid('similarGrid', sim.slice(0,12).map(m=>({
-          id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+          id:m.id, title:m.title||m.name, year:((m.release_date||m.first_air_date)||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
         })));
         similarSection.style.display = 'block';
       }
 
-      document.getElementById('aiExplain').textContent = `💬 "${strongMatch.title}" mil gayi — iska poora universe aur isi jaisi movies bhi dikha di.`;
+      document.getElementById('aiExplain').textContent = `💬 "${matchTitle}" mil gaya — iska universe aur isi jaisi content bhi dikha diya.`;
       document.getElementById('resultsCount').textContent = titleSearch.results.length + ' MATCH';
       renderGrid('resultsGrid', titleSearch.results.slice(0,10).map(m=>({
-        id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        id:m.id, title:m.title||m.name, year:((m.release_date||m.first_air_date)||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
       })));
-      lastSearch = {type:'title', query: mood};
+      lastSearch = {type:'title', query: mood, mediaType};
       renderPager('resultsPager', 1, Math.min(titleSearch.total_pages*2, 40), loadResultsPage);
 
     } else {
-      // Step 2: no direct movie title match — check if it's an actor's name
+      // Step 2: no direct title match — check if it's an actor's name
       const personSearch = await tmdbFetch(`/search/person?query=${encodeURIComponent(mood)}`, key);
       const personMatch = personSearch.results && personSearch.results.find(p => p.known_for_department === 'Acting' && p.popularity > 1);
 
       if(personMatch){
-        const credits = await tmdbFetch(`/person/${personMatch.id}/movie_credits`, key);
-        const cast = (credits.cast || []).filter(m => m.title);
+        const creditsPath = mediaType === 'movie' ? 'movie_credits' : 'tv_credits';
+        const credits = await tmdbFetch(`/person/${personMatch.id}/${creditsPath}`, key);
+        const cast = (credits.cast || []).filter(m => m.title || m.name);
         const seen = new Set();
         const uniqueCast = cast.filter(m => { if(seen.has(m.id)) return false; seen.add(m.id); return true; });
+        uniqueCast.forEach(m => { m.title = m.title || m.name; m.release_date = m.release_date || m.first_air_date; });
         uniqueCast.sort((a,b) => a.title.localeCompare(b.title)); // A to Z
 
         document.getElementById('actorTitle').textContent = personMatch.name + ' — Poori Filmography';
-        document.getElementById('actorCount').textContent = uniqueCast.length + ' MOVIES';
+        document.getElementById('actorCount').textContent = uniqueCast.length + (mediaType==='movie' ? ' MOVIES' : ' SHOWS');
         renderGrid('actorGrid', uniqueCast.slice(0,10).map(m=>({
           id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
         })));
         document.getElementById('actorSection').style.display = 'block';
 
-        // paginate actor filmography client-side, 10 per page
         window.__actorCastFull = uniqueCast;
         renderPager('actorPager', 1, Math.ceil(uniqueCast.length/10), renderActorPage);
 
-        document.getElementById('aiExplain').textContent = `💬 "${personMatch.name}" mil gaye — inki total ${uniqueCast.length} movies A-Z order mein dikha di.`;
+        document.getElementById('aiExplain').textContent = `💬 "${personMatch.name}" mil gaye — inki total ${uniqueCast.length} entries A-Z order mein dikha di.`;
         document.getElementById('resultsCount').textContent = uniqueCast.length + ' TOTAL';
         renderGrid('resultsGrid', uniqueCast.slice(0,10).map(m=>({
           id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
@@ -802,14 +945,15 @@ async function findMovies(){
         });
 
       } else {
-      // Step 3: not a movie, not an actor — treat as a mood, with variety so results don't repeat
+      // Step 3: not a title, not an actor — treat as a mood, with variety so results don't repeat
       const interpreted = interpretMood(mood);
-      const genreIds = interpreted.genres.map(g=>GENRE_MAP[g.toLowerCase()]).filter(Boolean).join(',');
+      const activeGenreMap = mediaType === 'movie' ? GENRE_MAP : GENRE_MAP_TV;
+      const genreIds = interpreted.genres.map(g=>activeGenreMap[g.toLowerCase()]).filter(Boolean).join(',');
       const lang = document.getElementById('langFilter').value;
-      const sortOptions = ['popularity.desc','vote_average.desc','release_date.desc'];
+      const sortOptions = ['popularity.desc','vote_average.desc', mediaType==='movie' ? 'release_date.desc' : 'first_air_date.desc'];
       const sortBy = sortOptions[Math.floor(Math.random()*sortOptions.length)];
 
-      let url = `/discover/movie?sort_by=${sortBy}&vote_count.gte=30&page=1`;
+      let url = `/discover/${mediaType}?sort_by=${sortBy}&vote_count.gte=30&page=1`;
       if(genreIds) url += `&with_genres=${genreIds}`;
       if(lang) url += `&with_original_language=${lang}`;
 
@@ -818,9 +962,9 @@ async function findMovies(){
       document.getElementById('aiExplain').textContent = '💬 ' + interpreted.explanation;
       document.getElementById('resultsCount').textContent = results.results.length + ' MILI';
       renderGrid('resultsGrid', results.results.slice(0,10).map(m=>({
-        id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        id:m.id, title:m.title||m.name, year:((m.release_date||m.first_air_date)||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
       })));
-      lastSearch = {type:'mood', genreIds, lang, sortBy};
+      lastSearch = {type:'mood', genreIds, lang, sortBy, mediaType};
       renderPager('resultsPager', 1, Math.min(results.total_pages*2, 40), loadResultsPage);
       }
     }
@@ -833,6 +977,57 @@ async function findMovies(){
   }finally{
     btn.disabled = false; btn.textContent = '🎬 FILM DHUNDO';
   }
+}
+
+// ---------- Theme toggle ----------
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeToggleBtn').textContent = theme === 'light' ? '☀️' : '🌙';
+  try{ localStorage.setItem('moodtalkies-theme', theme); }catch(e){}
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  applyTheme(current === 'light' ? 'dark' : 'light');
+}
+(function initTheme(){
+  let saved = 'dark';
+  try{ saved = localStorage.getItem('moodtalkies-theme') || 'dark'; }catch(e){}
+  applyTheme(saved);
+})();
+
+// ---------- Movies / TV Shows toggle ----------
+function setMediaType(type){
+  mediaType = type;
+  document.getElementById('btnMovie').classList.toggle('active', type === 'movie');
+  document.getElementById('btnTv').classList.toggle('active', type === 'tv');
+  document.getElementById('bannedSection').style.display = type === 'movie' ? 'block' : 'none';
+  const upcomingHeading = document.querySelector('#upcomingGrid').closest('section').querySelector('h2');
+  upcomingHeading.textContent = type === 'movie' ? 'Aa Rahi Hain' : 'Abhi Chal Rahi Hain';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('franchiseSection').style.display = 'none';
+  document.getElementById('similarSection').style.display = 'none';
+  document.getElementById('actorSection').style.display = 'none';
+  loadUpcomingPage(1);
+}
+
+// ---------- Voice search ----------
+function startVoiceSearch(){
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition){ alert('Is browser mein voice search support nahi hai. Chrome try karein.'); return; }
+  const micBtn = document.getElementById('micBtn');
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'hi-IN';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => micBtn.classList.add('listening');
+  recognition.onend = () => micBtn.classList.remove('listening');
+  recognition.onerror = () => micBtn.classList.remove('listening');
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById('moodInput').value = transcript;
+  };
+  recognition.start();
 }
 
 loadSideSections();
