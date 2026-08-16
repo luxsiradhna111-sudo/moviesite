@@ -511,4 +511,152 @@ function interpretMood(mood){
   const lower = mood.toLowerCase();
   let matched = [];
   let line = "";
-  for(const rule of MOOD_
+  for(const rule of MOOD_RULES){
+    if(rule.words.some(w => lower.includes(w))){
+      matched.push(...rule.genres);
+      if(!line) line = rule.line;
+    }
+  }
+  if(matched.length === 0){
+    matched = ['drama','comedy'];
+    line = "Tera mood generic laga, toh popular drama/comedy mila rahe hain.";
+  }
+  return {
+    genres: [...new Set(matched)].slice(0,3),
+    explanation: line
+  };
+}
+
+let lastSearch = null; // remembers last query so pagination can refetch further pages
+let resultsPageState = 1;
+
+async function loadResultsPage(page){
+  if(!lastSearch) return;
+  const key = getKey();
+  resultsPageState = page;
+  const grid = document.getElementById('resultsGrid');
+  const spinner = document.createElement('div');
+  spinner.className = 'spinner';
+  grid.parentElement.insertBefore(spinner, grid.nextSibling);
+
+  try{
+    if(lastSearch.type === 'title'){
+      const {tmdbPage, range} = tmdbPageAndSlice(page);
+      const ts = await tmdbFetch(`/search/movie?query=${encodeURIComponent(lastSearch.query)}&page=${tmdbPage}`, key);
+      const slice = ts.results.slice(range[0], range[1]);
+      renderGrid('resultsGrid', slice.map(m=>({
+        title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+      })));
+      renderPager('resultsPager', page, Math.min(ts.total_pages*2, 40), loadResultsPage);
+    } else {
+      const {tmdbPage, range} = tmdbPageAndSlice(page);
+      let url = `/discover/movie?sort_by=${lastSearch.sortBy}&vote_count.gte=30&page=${tmdbPage}`;
+      if(lastSearch.genreIds) url += `&with_genres=${lastSearch.genreIds}`;
+      if(lastSearch.lang) url += `&with_original_language=${lastSearch.lang}`;
+      const results = await tmdbFetch(url, key);
+      const slice = results.results.slice(range[0], range[1]);
+      renderGrid('resultsGrid', slice.map(m=>({
+        title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+      })));
+      renderPager('resultsPager', page, Math.min(results.total_pages*2, 40), loadResultsPage);
+    }
+  }catch(e){ console.error(e); }
+  spinner.remove();
+}
+
+async function findMovies(){
+  const key = getKey();
+  const mood = document.getElementById('moodInput').value.trim();
+  const btn = document.getElementById('searchBtn');
+  const resultsSection = document.getElementById('resultsSection');
+  const franchiseSection = document.getElementById('franchiseSection');
+  const similarSection = document.getElementById('similarSection');
+  const grid = document.getElementById('resultsGrid');
+
+  if(!key || key === "PASTE_YOUR_TMDB_KEY_HERE"){ alert('App owner ne abhi TMDB key set nahi ki — code mein TMDB_API_KEY daalni baaki hai.'); return; }
+  if(!mood){ alert('Apna mood ya movie naam toh likho!'); return; }
+
+  btn.disabled = true; btn.textContent = 'DHUND RAHA HAI...';
+  resultsSection.style.display = 'block';
+  franchiseSection.style.display = 'none';
+  similarSection.style.display = 'none';
+  grid.innerHTML = '';
+  document.getElementById('aiExplain').textContent = '';
+  document.getElementById('resultsCount').textContent = '';
+  const spinner = document.createElement('div');
+  spinner.className = 'spinner';
+  grid.parentElement.insertBefore(spinner, grid);
+
+  try{
+    // Step 1: try treating the input as a movie/franchise title search
+    const titleSearch = await tmdbFetch(`/search/movie?query=${encodeURIComponent(mood)}`, key);
+    const strongMatch = titleSearch.results && titleSearch.results.find(m => m.vote_count > 20);
+
+    if(strongMatch){
+      const details = await tmdbFetch(`/movie/${strongMatch.id}?append_to_response=similar`, key);
+
+      // Franchise/universe — A to Z all parts
+      if(details.belongs_to_collection){
+        const coll = await tmdbFetch(`/collection/${details.belongs_to_collection.id}`, key);
+        const parts = (coll.parts || []).slice().sort((a,b)=>(a.release_date||'9999').localeCompare(b.release_date||'9999'));
+        document.getElementById('franchiseTitle').textContent = coll.name;
+        renderGrid('franchiseGrid', parts.map(m=>({
+          title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        })));
+        franchiseSection.style.display = 'block';
+      }
+
+      // Similar / same-vibe movies
+      const sim = (details.similar && details.similar.results) || [];
+      if(sim.length){
+        renderGrid('similarGrid', sim.slice(0,12).map(m=>({
+          title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        })));
+        similarSection.style.display = 'block';
+      }
+
+      document.getElementById('aiExplain').textContent = `💬 "${strongMatch.title}" mil gayi — iska poora universe aur isi jaisi movies bhi dikha di.`;
+      document.getElementById('resultsCount').textContent = titleSearch.results.length + ' MATCH';
+      renderGrid('resultsGrid', titleSearch.results.slice(0,10).map(m=>({
+        title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+      })));
+      lastSearch = {type:'title', query: mood};
+      renderPager('resultsPager', 1, Math.min(titleSearch.total_pages*2, 40), loadResultsPage);
+
+    } else {
+      // Step 2: no direct title match — treat as a mood, with variety so results don't repeat
+      const interpreted = interpretMood(mood);
+      const genreIds = interpreted.genres.map(g=>GENRE_MAP[g.toLowerCase()]).filter(Boolean).join(',');
+      const lang = document.getElementById('langFilter').value;
+      const sortOptions = ['popularity.desc','vote_average.desc','release_date.desc'];
+      const sortBy = sortOptions[Math.floor(Math.random()*sortOptions.length)];
+
+      let url = `/discover/movie?sort_by=${sortBy}&vote_count.gte=30&page=1`;
+      if(genreIds) url += `&with_genres=${genreIds}`;
+      if(lang) url += `&with_original_language=${lang}`;
+
+      const results = await tmdbFetch(url, key);
+
+      document.getElementById('aiExplain').textContent = '💬 ' + interpreted.explanation;
+      document.getElementById('resultsCount').textContent = results.results.length + ' MILI';
+      renderGrid('resultsGrid', results.results.slice(0,10).map(m=>({
+        title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+      })));
+      lastSearch = {type:'mood', genreIds, lang, sortBy};
+      renderPager('resultsPager', 1, Math.min(results.total_pages*2, 40), loadResultsPage);
+    }
+
+    spinner.remove();
+  }catch(e){
+    spinner.remove();
+    grid.innerHTML = '<div class="empty">Kuch gadbad ho gayi — API key check karo ya dobara try karo.</div>';
+    console.error(e);
+  }finally{
+    btn.disabled = false; btn.textContent = '🎬 FILM DHUNDO';
+  }
+}
+
+loadSideSections();
+</script>
+</body>
+</html>
