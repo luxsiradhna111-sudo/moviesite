@@ -312,6 +312,12 @@
     <button class="primary" id="searchBtn" onclick="findMovies()">🎬 FILM DHUNDO</button>
   </div>
 
+  <section class="block" id="actorSection" style="display:none;">
+    <div class="block-head"><h2 id="actorTitle">Actor</h2><span class="count" id="actorCount">FILMOGRAPHY</span></div>
+    <div class="grid" id="actorGrid"></div>
+    <div class="pager" id="actorPager"></div>
+  </section>
+
   <section class="block" id="franchiseSection" style="display:none;">
     <div class="block-head"><h2 id="franchiseTitle">Universe</h2><span class="count">FRANCHISE</span></div>
     <div class="grid" id="franchiseGrid"></div>
@@ -574,6 +580,14 @@ async function loadResultsPage(page){
   spinner.remove();
 }
 
+function renderActorPage(page){
+  const items = (window.__actorCastFull || []).slice((page-1)*10, page*10);
+  renderGrid('actorGrid', items.map(m=>({
+    title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+  })));
+  renderPager('actorPager', page, Math.ceil((window.__actorCastFull||[]).length/10), renderActorPage);
+}
+
 async function findMovies(){
   const key = getKey();
   const mood = document.getElementById('moodInput').value.trim();
@@ -590,6 +604,7 @@ async function findMovies(){
   resultsSection.style.display = 'block';
   franchiseSection.style.display = 'none';
   similarSection.style.display = 'none';
+  document.getElementById('actorSection').style.display = 'none';
   grid.innerHTML = '';
   document.getElementById('aiExplain').textContent = '';
   document.getElementById('resultsCount').textContent = '';
@@ -634,7 +649,44 @@ async function findMovies(){
       renderPager('resultsPager', 1, Math.min(titleSearch.total_pages*2, 40), loadResultsPage);
 
     } else {
-      // Step 2: no direct title match — treat as a mood, with variety so results don't repeat
+      // Step 2: no direct movie title match — check if it's an actor's name
+      const personSearch = await tmdbFetch(`/search/person?query=${encodeURIComponent(mood)}`, key);
+      const personMatch = personSearch.results && personSearch.results.find(p => p.known_for_department === 'Acting' && p.popularity > 1);
+
+      if(personMatch){
+        const credits = await tmdbFetch(`/person/${personMatch.id}/movie_credits`, key);
+        const cast = (credits.cast || []).filter(m => m.title);
+        const seen = new Set();
+        const uniqueCast = cast.filter(m => { if(seen.has(m.id)) return false; seen.add(m.id); return true; });
+        uniqueCast.sort((a,b) => a.title.localeCompare(b.title)); // A to Z
+
+        document.getElementById('actorTitle').textContent = personMatch.name + ' — Poori Filmography';
+        document.getElementById('actorCount').textContent = uniqueCast.length + ' MOVIES';
+        renderGrid('actorGrid', uniqueCast.slice(0,10).map(m=>({
+          title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        })));
+        document.getElementById('actorSection').style.display = 'block';
+
+        // paginate actor filmography client-side, 10 per page
+        window.__actorCastFull = uniqueCast;
+        renderPager('actorPager', 1, Math.ceil(uniqueCast.length/10), renderActorPage);
+
+        document.getElementById('aiExplain').textContent = `💬 "${personMatch.name}" mil gaye — inki total ${uniqueCast.length} movies A-Z order mein dikha di.`;
+        document.getElementById('resultsCount').textContent = uniqueCast.length + ' TOTAL';
+        renderGrid('resultsGrid', uniqueCast.slice(0,10).map(m=>({
+          title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        })));
+        lastSearch = {type:'actorFallback', castRef: uniqueCast};
+        renderPager('resultsPager', 1, Math.ceil(uniqueCast.length/10), (page)=>{
+          const start = (page-1)*10;
+          const items = uniqueCast.slice(start, start+10);
+          renderGrid('resultsGrid', items.map(m=>({
+            title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+          })));
+        });
+
+      } else {
+      // Step 3: not a movie, not an actor — treat as a mood, with variety so results don't repeat
       const interpreted = interpretMood(mood);
       const genreIds = interpreted.genres.map(g=>GENRE_MAP[g.toLowerCase()]).filter(Boolean).join(',');
       const lang = document.getElementById('langFilter').value;
@@ -654,6 +706,7 @@ async function findMovies(){
       })));
       lastSearch = {type:'mood', genreIds, lang, sortBy};
       renderPager('resultsPager', 1, Math.min(results.total_pages*2, 40), loadResultsPage);
+      }
     }
 
     spinner.remove();
