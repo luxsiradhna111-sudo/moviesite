@@ -394,28 +394,38 @@ function renderBannedGrid(items){
   `).join('');
 }
 
-async function interpretMood(mood){
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 400,
-      messages: [{
-        role: "user",
-        content: `User's mood/situation for picking a movie: "${mood}"
+// Free, local mood → genre matcher (no external AI needed, works anywhere)
+const MOOD_RULES = [
+  {words:['sad','udaas','dukhi','rona','cry','heartbreak','breakup'], genres:['drama','romance'], line:"Emotional mood ke liye drama aur romance best fit hain."},
+  {words:['akela','alone','lonely','raat','night','quiet'], genres:['thriller','mystery','drama'], line:"Akele raat ke liye thoda intense, gripping content pick kiya."},
+  {words:['dar','horror','darr','scary','bhoot','ghost'], genres:['horror','thriller'], line:"Darr lagne wala mood — horror/thriller se perfect match."},
+  {words:['hasna','comedy','funny','maza','light','hasi'], genres:['comedy','family'], line:"Light aur funny mood ke liye comedy best rahegi."},
+  {words:['pyaar','love','romance','crush','valentine'], genres:['romance','drama'], line:"Romance mood ke liye pyaar bhari filmein chuni."},
+  {words:['action','fight','josh','adventure','thrill'], genres:['action','adventure'], line:"High energy mood — action/adventure ekdam fit baithega."},
+  {words:['dimag','mind','confuse','think','philosophical','deep'], genres:['mystery','sci-fi','thriller'], line:"Mind-bending mood ke liye mystery/sci-fi pick kiya."},
+  {words:['bachpan','family','ghar','sabke saath','kids'], genres:['family','animation'], line:"Family ke saath dekhne layak content select kiya."},
+  {words:['history','war','desh','patriotic'], genres:['history','war','drama'], line:"History/patriotic mood ke liye yeh genres fit hain."},
+  {words:['gaana','music','dance','concert'], genres:['music','drama'], line:"Music-heavy mood ke liye yeh genre best rahega."}
+];
 
-Respond ONLY with raw JSON, no markdown fences, no preamble, in this exact shape:
-{"genres": ["genre1","genre2"], "keywords": "2-4 word search phrase", "explanation": "one short friendly sentence in Hinglish explaining why these fit the mood"}
-
-Valid genre words to pick from: action, adventure, animation, comedy, crime, documentary, drama, family, fantasy, history, horror, music, mystery, romance, sci-fi, thriller, war, western.`
-      }]
-    })
-  });
-  const data = await response.json();
-  const text = data.content.map(b=>b.text||'').join('');
-  const clean = text.replace(/```json|```/g,'').trim();
-  return JSON.parse(clean);
+function interpretMood(mood){
+  const lower = mood.toLowerCase();
+  let matched = [];
+  let line = "";
+  for(const rule of MOOD_RULES){
+    if(rule.words.some(w => lower.includes(w))){
+      matched.push(...rule.genres);
+      if(!line) line = rule.line;
+    }
+  }
+  if(matched.length === 0){
+    matched = ['drama','comedy'];
+    line = "Tera mood generic laga, toh popular drama/comedy mila rahe hain.";
+  }
+  return {
+    genres: [...new Set(matched)].slice(0,3),
+    explanation: line
+  };
 }
 
 async function findMovies(){
@@ -469,5 +479,4 @@ async function findMovies(){
 loadSavedKey();
 </script>
 </body>
-  </html>
-  
+</html>
