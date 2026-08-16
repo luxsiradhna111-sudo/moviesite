@@ -347,10 +347,10 @@ const BANNED_LIST = [
 // Get it free from https://www.themoviedb.org/settings/api
 const TMDB_API_KEY = "f3978b76dff0b07c69b848a46a056d94";
 
-function getKey(){ return TMDB_API_KEY; }
+function getKey(){ return f3978b76dff0b07c69b848a46a056d94; }
 
 async function tmdbFetch(path, key){
-  const res = await fetch(`https://api.themoviedb.org/3${path}${path.includes('?')?'&':'?'}api_key=${key}`);
+  const res = await fetch(`https://api.themoviedb.org/3${path}${path.includes('?')?'&':'?'}api_key=${f3978b76dff0b07c69b848a46a056d94}`);
   if(!res.ok) throw new Error('TMDB error '+res.status);
   return res.json();
 }
