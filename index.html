@@ -224,7 +224,55 @@
     position:relative;
     box-shadow:0 12px 28px -14px rgba(0,0,0,0.7);
     transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    cursor:pointer;
   }
+
+  /* Movie detail modal */
+  .modal-backdrop{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(0,0,0,0.75);
+    backdrop-filter:blur(3px);
+    z-index:100;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal-box{
+    background:var(--bg2);
+    width:100%;
+    max-width:520px;
+    max-height:90vh;
+    overflow-y:auto;
+    border-radius:20px 20px 0 0;
+    position:relative;
+    border-top:1px solid var(--line);
+    box-shadow:0 -20px 60px rgba(0,0,0,0.6);
+    animation:slideUp .25s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal-close{
+    position:absolute;top:14px;right:14px;z-index:2;
+    background:rgba(12,15,20,0.7);border:1px solid var(--line);
+    color:var(--paper);width:34px;height:34px;border-radius:50%;
+    font-size:15px;cursor:pointer;
+  }
+  .modal-poster{width:100%;max-height:340px;object-fit:cover;display:block;}
+  .modal-content{padding:22px;}
+  .modal-title{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:1.5px;color:var(--gold);}
+  .modal-meta-row{
+    display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px;
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);
+  }
+  .modal-meta-row span{
+    border:1px solid var(--line);padding:3px 9px;border-radius:6px;
+  }
+  .modal-section-label{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;
+    color:var(--teal);text-transform:uppercase;margin:14px 0 6px;
+  }
+  .modal-overview{font-size:14px;line-height:1.6;color:var(--paper);}
+  .modal-cast{font-size:13.5px;color:var(--muted);line-height:1.6;}
   .card:hover{
     transform:translateY(-4px);
     border-color:rgba(232,185,74,0.4);
@@ -328,10 +376,11 @@
     <button class="primary" id="searchBtn" onclick="findMovies()">🎬 FILM DHUNDO</button>
   </div>
 
-  <section class="block" id="actorSection" style="display:none;">
-    <div class="block-head"><h2 id="actorTitle">Actor</h2><span class="count" id="actorCount">FILMOGRAPHY</span></div>
-    <div class="grid" id="actorGrid"></div>
-    <div class="pager" id="actorPager"></div>
+  <section class="block" id="resultsSection" style="display:none;">
+    <div class="block-head"><h2>Aapke Liye</h2><span class="count" id="resultsCount"></span></div>
+    <div class="ai-note" id="aiExplain"></div>
+    <div class="grid" id="resultsGrid"></div>
+    <div class="pager" id="resultsPager"></div>
   </section>
 
   <section class="block" id="franchiseSection" style="display:none;">
@@ -339,16 +388,15 @@
     <div class="grid" id="franchiseGrid"></div>
   </section>
 
+  <section class="block" id="actorSection" style="display:none;">
+    <div class="block-head"><h2 id="actorTitle">Actor</h2><span class="count" id="actorCount">FILMOGRAPHY</span></div>
+    <div class="grid" id="actorGrid"></div>
+    <div class="pager" id="actorPager"></div>
+  </section>
+
   <section class="block" id="similarSection" style="display:none;">
     <div class="block-head"><h2>Isi Vibe Ki Aur</h2><span class="count">SIMILAR</span></div>
     <div class="grid" id="similarGrid"></div>
-  </section>
-
-  <section class="block" id="resultsSection" style="display:none;">
-    <div class="block-head"><h2>Tere Liye</h2><span class="count" id="resultsCount"></span></div>
-    <div class="ai-note" id="aiExplain"></div>
-    <div class="grid" id="resultsGrid"></div>
-    <div class="pager" id="resultsPager"></div>
   </section>
 
   <section class="block">
@@ -370,6 +418,15 @@
   Crafted &amp; Directed by <span style="color:var(--paper);font-weight:600;">Vishesh Bainsla</span><br/>
   <span style="opacity:0.7;">movie data by TMDB · not affiliated with TMDB</span>
 </footer>
+
+<div id="movieModal" class="modal-backdrop" onclick="if(event.target===this) closeMovieModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeMovieModal()">✕</button>
+    <div id="modalBody" class="modal-body">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 const GENRE_MAP = {
@@ -434,7 +491,7 @@ async function loadUpcomingPage(page){
     const up = await tmdbFetch(`/movie/upcoming?language=en-US&page=${tmdbPage}`, key);
     const slice = up.results.slice(range[0], range[1]);
     renderGrid('upcomingGrid', slice.map(m=>({
-      title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+      id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
     })));
     renderPager('upcomingPager', page, Math.min(up.total_pages*2, 40), loadUpcomingPage);
   }catch(e){ document.getElementById('upcomingGrid').innerHTML = '<div class="empty">Load nahi hua — key check karo</div>'; }
@@ -454,7 +511,8 @@ async function loadBannedPage(page){
       results.push({
         title:item.title, why:item.why,
         year: m ? (m.release_date||'').slice(0,4) : '',
-        poster: m ? m.poster_path : null
+        poster: m ? m.poster_path : null,
+        id: m ? m.id : null
       });
     }
     renderBannedGrid(results);
@@ -498,7 +556,7 @@ function renderGrid(elId, items){
   const el = document.getElementById(elId);
   if(!items.length){ el.innerHTML = '<div class="empty">Kuch nahi mila</div>'; return; }
   el.innerHTML = items.map(m=>`
-    <div class="card">
+    <div class="card" onclick="openMovieModal(${m.id})">
       <img class="poster" src="${posterUrl(m.poster)}" alt="${m.title}" loading="lazy"/>
       <div class="perf"></div>
       <div class="card-body">
@@ -512,7 +570,7 @@ function renderGrid(elId, items){
 function renderBannedGrid(items){
   const el = document.getElementById('bannedGrid');
   el.innerHTML = items.map(m=>`
-    <div class="card">
+    <div class="card" onclick="${m.id ? `openMovieModal(${m.id})` : ''}">
       <img class="poster" src="${posterUrl(m.poster)}" alt="${m.title}" loading="lazy"/>
       <div class="perf"></div>
       <div class="card-body">
@@ -577,7 +635,7 @@ async function loadResultsPage(page){
       const ts = await tmdbFetch(`/search/movie?query=${encodeURIComponent(lastSearch.query)}&page=${tmdbPage}`, key);
       const slice = ts.results.slice(range[0], range[1]);
       renderGrid('resultsGrid', slice.map(m=>({
-        title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
       })));
       renderPager('resultsPager', page, Math.min(ts.total_pages*2, 40), loadResultsPage);
     } else {
@@ -588,7 +646,7 @@ async function loadResultsPage(page){
       const results = await tmdbFetch(url, key);
       const slice = results.results.slice(range[0], range[1]);
       renderGrid('resultsGrid', slice.map(m=>({
-        title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
       })));
       renderPager('resultsPager', page, Math.min(results.total_pages*2, 40), loadResultsPage);
     }
@@ -599,9 +657,51 @@ async function loadResultsPage(page){
 function renderActorPage(page){
   const items = (window.__actorCastFull || []).slice((page-1)*10, page*10);
   renderGrid('actorGrid', items.map(m=>({
-    title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+    id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
   })));
   renderPager('actorPager', page, Math.ceil((window.__actorCastFull||[]).length/10), renderActorPage);
+}
+
+async function openMovieModal(id){
+  if(!id) return;
+  const key = getKey();
+  const modal = document.getElementById('movieModal');
+  const body = document.getElementById('modalBody');
+  modal.classList.add('open');
+  body.innerHTML = '<div class="spinner"></div>';
+  document.body.style.overflow = 'hidden';
+
+  try{
+    const m = await tmdbFetch(`/movie/${id}?append_to_response=credits`, key);
+    const genres = (m.genres || []).map(g=>g.name).join(', ') || '—';
+    const year = (m.release_date || '').slice(0,4) || '—';
+    const castNames = (m.credits && m.credits.cast || []).slice(0,6).map(c=>c.name).join(', ') || 'Info uplabdh nahi hai';
+    const rating = m.vote_average ? m.vote_average.toFixed(1) : '—';
+
+    body.innerHTML = `
+      <img class="modal-poster" src="${posterUrl(m.poster_path)}" alt="${m.title}"/>
+      <div class="modal-content">
+        <div class="modal-title">${m.title}</div>
+        <div class="modal-meta-row">
+          <span>📅 ${year}</span>
+          <span>★ ${rating}</span>
+          <span>🎭 ${genres}</span>
+          ${m.runtime ? `<span>⏱ ${m.runtime} min</span>` : ''}
+        </div>
+        <div class="modal-section-label">Cast</div>
+        <div class="modal-cast">${castNames}</div>
+        <div class="modal-section-label">Description</div>
+        <div class="modal-overview">${m.overview || 'Description uplabdh nahi hai.'}</div>
+      </div>
+    `;
+  }catch(e){
+    body.innerHTML = '<div class="modal-content"><div class="empty">Details load nahi hui — dobara try karo.</div></div>';
+  }
+}
+
+function closeMovieModal(){
+  document.getElementById('movieModal').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 async function findMovies(){
@@ -642,7 +742,7 @@ async function findMovies(){
         const parts = (coll.parts || []).slice().sort((a,b)=>(a.release_date||'9999').localeCompare(b.release_date||'9999'));
         document.getElementById('franchiseTitle').textContent = coll.name;
         renderGrid('franchiseGrid', parts.map(m=>({
-          title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+          id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
         })));
         franchiseSection.style.display = 'block';
       }
@@ -651,7 +751,7 @@ async function findMovies(){
       const sim = (details.similar && details.similar.results) || [];
       if(sim.length){
         renderGrid('similarGrid', sim.slice(0,12).map(m=>({
-          title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+          id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
         })));
         similarSection.style.display = 'block';
       }
@@ -659,7 +759,7 @@ async function findMovies(){
       document.getElementById('aiExplain').textContent = `💬 "${strongMatch.title}" mil gayi — iska poora universe aur isi jaisi movies bhi dikha di.`;
       document.getElementById('resultsCount').textContent = titleSearch.results.length + ' MATCH';
       renderGrid('resultsGrid', titleSearch.results.slice(0,10).map(m=>({
-        title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
       })));
       lastSearch = {type:'title', query: mood};
       renderPager('resultsPager', 1, Math.min(titleSearch.total_pages*2, 40), loadResultsPage);
@@ -679,7 +779,7 @@ async function findMovies(){
         document.getElementById('actorTitle').textContent = personMatch.name + ' — Poori Filmography';
         document.getElementById('actorCount').textContent = uniqueCast.length + ' MOVIES';
         renderGrid('actorGrid', uniqueCast.slice(0,10).map(m=>({
-          title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+          id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
         })));
         document.getElementById('actorSection').style.display = 'block';
 
@@ -690,14 +790,14 @@ async function findMovies(){
         document.getElementById('aiExplain').textContent = `💬 "${personMatch.name}" mil gaye — inki total ${uniqueCast.length} movies A-Z order mein dikha di.`;
         document.getElementById('resultsCount').textContent = uniqueCast.length + ' TOTAL';
         renderGrid('resultsGrid', uniqueCast.slice(0,10).map(m=>({
-          title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+          id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
         })));
         lastSearch = {type:'actorFallback', castRef: uniqueCast};
         renderPager('resultsPager', 1, Math.ceil(uniqueCast.length/10), (page)=>{
           const start = (page-1)*10;
           const items = uniqueCast.slice(start, start+10);
           renderGrid('resultsGrid', items.map(m=>({
-            title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+            id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
           })));
         });
 
@@ -718,7 +818,7 @@ async function findMovies(){
       document.getElementById('aiExplain').textContent = '💬 ' + interpreted.explanation;
       document.getElementById('resultsCount').textContent = results.results.length + ' MILI';
       renderGrid('resultsGrid', results.results.slice(0,10).map(m=>({
-        title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+        id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
       })));
       lastSearch = {type:'mood', genreIds, lang, sortBy};
       renderPager('resultsPager', 1, Math.min(results.total_pages*2, 40), loadResultsPage);
