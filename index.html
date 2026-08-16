@@ -872,7 +872,7 @@ async function findMovies(){
   try{
     // Step 1: try treating the input as a title search (movie or TV, based on toggle)
     const titleSearch = await tmdbFetch(`/search/${mediaType}?query=${encodeURIComponent(mood)}`, key);
-    const strongMatch = titleSearch.results && titleSearch.results.find(m => m.vote_count > 20);
+    const strongMatch = titleSearch.results && titleSearch.results.length > 0 ? titleSearch.results[0] : null;
 
     if(strongMatch){
       const details = await tmdbFetch(`/${mediaType}/${strongMatch.id}?append_to_response=similar`, key);
