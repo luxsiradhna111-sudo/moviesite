@@ -269,6 +269,25 @@
     grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
     gap:16px;
   }
+  .people-grid{
+    grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+    gap:14px;
+  }
+  .person-card{
+    text-align:center;cursor:pointer;
+  }
+  .person-photo{
+    width:100%;aspect-ratio:1/1;border-radius:50%;
+    object-fit:cover;display:block;
+    border:2px solid var(--line);
+    box-shadow:0 8px 20px -10px rgba(0,0,0,0.7);
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .person-card:hover .person-photo{transform:translateY(-3px);border-color:var(--gold);}
+  .person-name{
+    font-size:12.5px;font-weight:600;margin-top:8px;
+    line-height:1.3;color:var(--paper);
+  }
   .card{
     background:linear-gradient(160deg,#161B23,var(--bg2));
     border-radius:12px;
@@ -485,6 +504,12 @@
     <div class="pager" id="bannedPager"></div>
   </section>
 
+  <section class="block" id="actorsBrowseSection">
+    <div class="block-head"><h2>Actors &amp; Actresses</h2><span class="count">DUNIYA BHAR SE</span></div>
+    <div class="grid people-grid" id="actorsBrowseGrid"><div class="empty">API key daal ke load karo →</div></div>
+    <div class="pager" id="actorsBrowsePager"></div>
+  </section>
+
 </div>
 
 <footer>
@@ -603,10 +628,68 @@ async function loadBannedPage(page){
   }catch(e){ document.getElementById('bannedGrid').innerHTML = '<div class="empty">Load nahi hua — key check karo</div>'; }
 }
 
+function renderPersonGrid(elId, items){
+  const el = document.getElementById(elId);
+  if(!items.length){ el.innerHTML = '<div class="empty">Kuch nahi mila</div>'; return; }
+  el.innerHTML = items.map(p=>`
+    <div class="person-card" onclick="openActorFilmography(${p.id}, '${p.name.replace(/'/g,"\\'")}')">
+      <img class="person-photo" src="${personPhotoUrl(p.photo)}" alt="${p.name}" loading="lazy"/>
+      <div class="person-name">${p.name}</div>
+    </div>
+  `).join('');
+}
+
+function personPhotoUrl(path){
+  return path ? `https://image.tmdb.org/t/p/w342${path}` : 'https://via.placeholder.com/342x342/12161d/8D95A3?text=No+Photo';
+}
+
+let actorsBrowsePageState = 1;
+async function loadActorsBrowsePage(page){
+  const key = getKey();
+  if(!key || key === "PASTE_YOUR_TMDB_KEY_HERE") return;
+  actorsBrowsePageState = page;
+  const {tmdbPage, range} = tmdbPageAndSlice(page);
+  try{
+    const data = await tmdbFetch(`/person/popular?page=${tmdbPage}`, key);
+    const slice = data.results.slice(range[0], range[1]).filter(p => p.known_for_department === 'Acting');
+    renderPersonGrid('actorsBrowseGrid', slice.map(p=>({id:p.id, name:p.name, photo:p.profile_path})));
+    renderPager('actorsBrowsePager', page, Math.min(data.total_pages*2, 40), loadActorsBrowsePage);
+  }catch(e){ document.getElementById('actorsBrowseGrid').innerHTML = '<div class="empty">Load nahi hua — key check karo</div>'; }
+}
+
+async function openActorFilmography(id, name){
+  const key = getKey();
+  document.getElementById('actorSection').style.display = 'block';
+  document.getElementById('actorTitle').textContent = name + ' — Poori Filmography';
+  document.getElementById('actorCount').textContent = 'LOAD HO RAHA HAI...';
+  document.getElementById('actorGrid').innerHTML = '<div class="spinner"></div>';
+  document.getElementById('actorSection').scrollIntoView({behavior:'smooth', block:'start'});
+
+  try{
+    const [movieCredits, tvCredits] = await Promise.all([
+      tmdbFetch(`/person/${id}/movie_credits`, key),
+      tmdbFetch(`/person/${id}/tv_credits`, key)
+    ]);
+    const movieCast = (movieCredits.cast || []).map(m => ({...m, mediaKind:'movie'}));
+    const tvCast = (tvCredits.cast || []).map(m => ({...m, title: m.name, release_date: m.first_air_date, mediaKind:'tv'}));
+    const combined = [...movieCast, ...tvCast].filter(m => m.title);
+    const seen = new Set();
+    const unique = combined.filter(m => { const k = m.mediaKind+m.id; if(seen.has(k)) return false; seen.add(k); return true; });
+    unique.sort((a,b) => a.title.localeCompare(b.title)); // A to Z
+
+    document.getElementById('actorCount').textContent = unique.length + ' TOTAL';
+    window.__actorCastFull = unique;
+    renderActorPage(1);
+  }catch(e){
+    document.getElementById('actorGrid').innerHTML = '<div class="empty">Filmography load nahi hui — dobara try karein.</div>';
+  }
+}
+
 async function loadSideSections(){
   const randomStartPage = Math.floor(Math.random()*6) + 1; // fresh set of upcoming movies each refresh
   loadUpcomingPage(randomStartPage);
   loadBannedPage(1);
+  loadActorsBrowsePage(1);
 }
 
 function renderPager(elId, current, totalPages, onClick){
@@ -639,7 +722,7 @@ function renderGrid(elId, items){
   const el = document.getElementById(elId);
   if(!items.length){ el.innerHTML = '<div class="empty">Kuch nahi mila</div>'; return; }
   el.innerHTML = items.map(m=>`
-    <div class="card" onclick="openMovieModal(${m.id})">
+    <div class="card" onclick="openMovieModal(${m.id}, '${m.mediaKind || mediaType}')">
       <img class="poster" src="${posterUrl(m.poster)}" alt="${m.title}" loading="lazy"/>
       <div class="perf"></div>
       <div class="card-body">
@@ -740,7 +823,7 @@ async function loadResultsPage(page){
 function renderActorPage(page){
   const items = (window.__actorCastFull || []).slice((page-1)*10, page*10);
   renderGrid('actorGrid', items.map(m=>({
-    id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
+    id:m.id, title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path, mediaKind:m.mediaKind
   })));
   renderPager('actorPager', page, Math.ceil((window.__actorCastFull||[]).length/10), renderActorPage);
 }
@@ -753,9 +836,10 @@ const TRAILER_LANGS = [
   {code:'zh', label:'🇨🇳 Chinese'}
 ];
 
-async function fetchAllTrailers(id, key){
+async function fetchAllTrailers(id, key, kind){
+  kind = kind || mediaType;
   const calls = TRAILER_LANGS.map(l =>
-    tmdbFetch(`/${mediaType}/${id}/videos?language=${l.code}-${l.code.toUpperCase()}`, key)
+    tmdbFetch(`/${kind}/${id}/videos?language=${l.code}-${l.code.toUpperCase()}`, key)
       .then(r => ({lang:l, videos:r.results || []}))
       .catch(() => ({lang:l, videos:[]}))
   );
@@ -769,9 +853,10 @@ async function fetchAllTrailers(id, key){
   return trailers;
 }
 
-async function fetchOTT(id, key){
+async function fetchOTT(id, key, kind){
+  kind = kind || mediaType;
   try{
-    const data = await tmdbFetch(`/${mediaType}/${id}/watch/providers`, key);
+    const data = await tmdbFetch(`/${kind}/${id}/watch/providers`, key);
     const region = (data.results && (data.results.IN || data.results.US)) || null;
     if(!region) return [];
     const all = [...(region.flatrate||[]), ...(region.rent||[]), ...(region.buy||[])];
@@ -780,8 +865,9 @@ async function fetchOTT(id, key){
   }catch(e){ return []; }
 }
 
-async function openMovieModal(id){
+async function openMovieModal(id, kind){
   if(!id) return;
+  kind = kind || mediaType;
   const key = getKey();
   const modal = document.getElementById('movieModal');
   const body = document.getElementById('modalBody');
@@ -790,7 +876,7 @@ async function openMovieModal(id){
   document.body.style.overflow = 'hidden';
 
   try{
-    const m = await tmdbFetch(`/${mediaType}/${id}?append_to_response=credits`, key);
+    const m = await tmdbFetch(`/${kind}/${id}?append_to_response=credits`, key);
     const title = m.title || m.name;
     const genres = (m.genres || []).map(g=>g.name).join(', ') || '—';
     const year = ((m.release_date || m.first_air_date || '')).slice(0,4) || '—';
@@ -819,7 +905,7 @@ async function openMovieModal(id){
       </div>
     `;
 
-    fetchAllTrailers(id, key).then(trailers=>{
+    fetchAllTrailers(id, key, kind).then(trailers=>{
       const el = document.getElementById('trailerList');
       if(!el) return;
       el.innerHTML = trailers.length ? trailers.map(t=>
@@ -827,7 +913,7 @@ async function openMovieModal(id){
       ).join('') : '<span class="empty">Koi trailer nahi mila</span>';
     });
 
-    fetchOTT(id, key).then(providers=>{
+    fetchOTT(id, key, kind).then(providers=>{
       const el = document.getElementById('ottList');
       if(!el) return;
       el.innerHTML = providers.length ? providers.map(p=>
