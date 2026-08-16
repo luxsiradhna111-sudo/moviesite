@@ -20,11 +20,20 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
     background:
-      radial-gradient(ellipse at top, #171C24 0%, var(--bg) 60%);
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(232,185,74,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse at top, #171C24 0%, var(--bg) 55%);
     color:var(--paper);
     font-family:'Inter',sans-serif;
     min-height:100vh;
     padding-bottom:60px;
+    position:relative;
+  }
+  body::after{
+    content:"";
+    position:fixed;inset:0;
+    pointer-events:none;
+    box-shadow:inset 0 0 160px rgba(0,0,0,0.65);
+    z-index:1;
   }
   ::selection{background:var(--gold);color:#0C0F14;}
 
@@ -56,6 +65,16 @@
       repeating-linear-gradient(90deg, transparent 0 2px, rgba(232,185,74,0.03) 2px 4px);
     pointer-events:none;
   }
+  .presented-by{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:4px;
+    color:var(--muted);
+    text-transform:uppercase;
+    opacity:0.85;
+    margin-bottom:14px;
+  }
+  .presented-by b{color:var(--teal);font-weight:600;letter-spacing:3px;}
   .eyebrow{
     font-family:'JetBrains Mono',monospace;
     letter-spacing:3px;
@@ -65,10 +84,13 @@
   }
   h1.title{
     font-family:'Bebas Neue',sans-serif;
-    font-size:clamp(42px,11vw,72px);
-    letter-spacing:3px;
-    color:var(--gold);
-    text-shadow:0 0 18px rgba(232,185,74,0.35), 0 2px 0 #7a5a1a;
+    font-size:clamp(46px,12vw,80px);
+    letter-spacing:4px;
+    background:linear-gradient(180deg, #FCE7B3 0%, var(--gold) 55%, #B8842A 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    filter:drop-shadow(0 0 22px rgba(232,185,74,0.4));
     line-height:1;
     margin-top:6px;
   }
@@ -84,12 +106,13 @@
 
   /* Ticket window */
   .ticket-window{
-    background:var(--bg2);
+    background:linear-gradient(160deg, #151B24 0%, var(--bg2) 100%);
     border:1px solid var(--line);
-    border-radius:14px;
-    padding:22px;
+    border-radius:16px;
+    padding:24px;
     margin:26px 0;
     position:relative;
+    box-shadow:0 20px 50px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
   }
   .ticket-window::after{
     content:"";
@@ -130,19 +153,21 @@
   button.primary{
     margin-top:16px;
     width:100%;
-    background:var(--gold);
+    background:linear-gradient(135deg, #F4CB6E, var(--gold) 60%, #D89F35);
     color:#241a05;
     border:none;
-    border-radius:8px;
-    padding:14px;
+    border-radius:10px;
+    padding:15px;
     font-family:'Bebas Neue',sans-serif;
-    font-size:20px;
-    letter-spacing:2px;
+    font-size:21px;
+    letter-spacing:2.5px;
     cursor:pointer;
-    transition:transform .12s ease, box-shadow .12s ease;
+    box-shadow:0 8px 24px -8px rgba(232,185,74,0.5);
+    transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
   }
-  button.primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(232,185,74,0.25);}
-  button.primary:disabled{opacity:0.5;cursor:wait;}
+  button.primary:hover{transform:translateY(-2px);box-shadow:0 12px 30px -8px rgba(232,185,74,0.6);filter:brightness(1.05);}
+  button.primary:active{transform:translateY(0);}
+  button.primary:disabled{opacity:0.5;cursor:wait;box-shadow:none;}
 
   .apikey-note{
     font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5;
@@ -177,11 +202,18 @@
     gap:16px;
   }
   .card{
-    background:var(--bg2);
-    border-radius:10px;
+    background:linear-gradient(160deg,#161B23,var(--bg2));
+    border-radius:12px;
     overflow:hidden;
     border:1px solid var(--line);
     position:relative;
+    box-shadow:0 12px 28px -14px rgba(0,0,0,0.7);
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .card:hover{
+    transform:translateY(-4px);
+    border-color:rgba(232,185,74,0.4);
+    box-shadow:0 18px 34px -14px rgba(0,0,0,0.8), 0 0 0 1px rgba(232,185,74,0.15);
   }
   .card .poster{
     width:100%;aspect-ratio:2/3;
@@ -234,9 +266,10 @@
 <body>
 
 <header class="marquee">
+  <div class="presented-by">An original by <b>VISHESH BAINSLA</b></div>
   <div class="eyebrow">EK TICKET · POORI DUNIYA KI FILMEIN</div>
   <h1 class="title">MOODTALKIES</h1>
-  <p class="tagline">Apna mood bata — AI duniya bhar ki filmon se poster ke saath suggest karega.</p>
+  <p class="tagline">Apna mood batao — AI duniya bhar ki filmon se poster ke saath suggest karega.</p>
 </header>
 <div class="sprockets">
   <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
@@ -245,12 +278,8 @@
 <div class="wrap">
 
   <div class="ticket-window">
-    <label>TMDB API Key (free, one-time setup)</label>
-    <input type="text" id="tmdbKey" placeholder="Yahan apni free TMDB API key paste karo" />
-    <p class="apikey-note">Free key idhar se lo: <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org/settings/api</a> — 2 minute ka signup, koi card nahi chahiye. Key sirf tumhare liye save rahegi, dobara nahi maangenge.</p>
-
-    <div style="margin-top:18px;">
-      <label>Tera mood ya situation</label>
+    <div style="margin-top:0;">
+      <label>Aapka mood ya situation</label>
       <textarea id="moodInput" rows="3" placeholder="Jaise: raat ko akela hu, kuch mind-bending thriller chahiye jo kisi ne dekhi na ho..."></textarea>
     </div>
 
@@ -273,7 +302,7 @@
   </div>
 
   <section class="block" id="resultsSection" style="display:none;">
-    <div class="block-head"><h2>Tere Liye</h2><span class="count" id="resultsCount"></span></div>
+    <div class="block-head"><h2>Aapke Liye</h2><span class="count" id="resultsCount"></span></div>
     <div class="ai-note" id="aiExplain"></div>
     <div class="grid" id="resultsGrid"></div>
   </section>
@@ -290,7 +319,11 @@
 
 </div>
 
-<footer>MOODTALKIES · movie data by TMDB · not affiliated with TMDB</footer>
+<footer>
+  <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:16px;color:var(--gold);margin-bottom:6px;">MOODTALKIES</div>
+  Crafted &amp; Directed by <span style="color:var(--paper);font-weight:600;">Vishesh Bainsla</span><br/>
+  <span style="opacity:0.7;">movie data by TMDB · not affiliated with TMDB</span>
+</footer>
 
 <script>
 const GENRE_MAP = {
@@ -310,18 +343,11 @@ const BANNED_LIST = [
   {title:"The Wolf of Wall Street", why:"Kai Middle Eastern countries mein content ke liye banned/heavily cut."}
 ];
 
-function getKey(){ return document.getElementById('tmdbKey').value.trim(); }
+// ⚠️ Paste your own free TMDB API key between the quotes below.
+// Get it free from https://www.themoviedb.org/settings/api
+const TMDB_API_KEY = "PASTE_YOUR_TMDB_KEY_HERE";
 
-async function loadSavedKey(){
-  try{
-    const r = await window.storage.get('tmdb-api-key');
-    if(r && r.value){ document.getElementById('tmdbKey').value = r.value; loadSideSections(); }
-  }catch(e){ /* no saved key yet */ }
-}
-
-async function saveKey(key){
-  try{ await window.storage.set('tmdb-api-key', key); }catch(e){ console.error(e); }
-}
+function getKey(){ return TMDB_API_KEY; }
 
 async function tmdbFetch(path, key){
   const res = await fetch(`https://api.themoviedb.org/3${path}${path.includes('?')?'&':'?'}api_key=${key}`);
@@ -331,8 +357,7 @@ async function tmdbFetch(path, key){
 
 async function loadSideSections(){
   const key = getKey();
-  if(!key) return;
-  saveKey(key);
+  if(!key || key === "f3978b76dff0b07c69b848a46a056d94") return;
 
   // Upcoming
   try{
@@ -435,11 +460,10 @@ async function findMovies(){
   const resultsSection = document.getElementById('resultsSection');
   const grid = document.getElementById('resultsGrid');
 
-  if(!key){ alert('Pehle TMDB API key daalo bhai — upar note mein link hai.'); return; }
+  if(!key || key === "f3978b76dff0b07c69b848a46a056d94"){ alert('App owner ne abhi TMDB key set nahi ki — code mein TMDB_API_KEY daalni baaki hai.'); return; }
   if(!mood){ alert('Apna mood toh likho!'); return; }
 
-  saveKey(key);
-  btn.disabled = true; btn.textContent = 'SOCH RAHA HAI...';
+  btn.disabled = true; btn.textContent = 'SOCH RAHA HOON...';
   resultsSection.style.display = 'block';
   grid.innerHTML = '';
   document.getElementById('aiExplain').textContent = '';
@@ -476,7 +500,7 @@ async function findMovies(){
   }
 }
 
-loadSavedKey();
+loadSideSections();
 </script>
 </body>
 </html>
