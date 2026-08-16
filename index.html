@@ -267,7 +267,7 @@
 
 <header class="marquee">
   <div class="presented-by">An original by <b>VISHESH BAINSLA</b></div>
-  <div class="eyebrow">EK TICKET · POORI DUNIYA KI FILMEIN</div>
+  <div class="eyebrow">EK TEXT · POORI DUNIYA KI FILMEIN</div>
   <h1 class="title">MOODTALKIES</h1>
   <p class="tagline">Apna mood batao — AI duniya bhar ki filmon se poster ke saath suggest karega.</p>
 </header>
@@ -345,7 +345,7 @@ const BANNED_LIST = [
 
 // ⚠️ Paste your own free TMDB API key between the quotes below.
 // Get it free from https://www.themoviedb.org/settings/api
-const TMDB_API_KEY = "PASTE_YOUR_TMDB_KEY_HERE";
+const TMDB_API_KEY = "f3978b76dff0b07c69b848a46a056d94";
 
 function getKey(){ return TMDB_API_KEY; }
 
@@ -445,7 +445,7 @@ function interpretMood(mood){
   }
   if(matched.length === 0){
     matched = ['drama','comedy'];
-    line = "Tera mood generic laga, toh popular drama/comedy mila rahe hain.";
+    line = "Aapka mood generic laga, toh popular drama/comedy mila rahe hain.";
   }
   return {
     genres: [...new Set(matched)].slice(0,3),
