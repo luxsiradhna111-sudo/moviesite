@@ -249,6 +249,17 @@
     color:var(--muted);font-size:13px;text-align:center;padding:20px;
     font-family:'JetBrains Mono',monospace;
   }
+  .pager{
+    display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap;
+  }
+  .pg-btn{
+    font-family:'JetBrains Mono',monospace;
+    background:var(--bg2);border:1px solid var(--line);color:var(--paper);
+    min-width:34px;height:34px;border-radius:7px;cursor:pointer;font-size:13px;
+    transition:all .15s ease;
+  }
+  .pg-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .pg-btn.active{background:var(--gold);color:#241a05;border-color:var(--gold);font-weight:700;}
   .spinner{
     width:22px;height:22px;border-radius:50%;
     border:2px solid var(--line);border-top-color:var(--gold);
@@ -280,7 +291,7 @@
   <div class="ticket-window">
     <div style="margin-top:0;">
       <label>Tera mood ya situation</label>
-      <textarea id="moodInput" rows="3" placeholder="Jaise: raat ko akela hu, kuch mind-bending thriller chahiye jo kisi ne dekhi na ho..."></textarea>
+      <textarea id="moodInput" rows="3" placeholder="Movie/franchise ka naam likho (jaise 'The Conjuring' ya 'Spider-Man') YA apna mood batao (jaise 'raat ko akela hu, thriller chahiye')"></textarea>
     </div>
 
     <div class="row">
@@ -301,20 +312,33 @@
     <button class="primary" id="searchBtn" onclick="findMovies()">🎬 FILM DHUNDO</button>
   </div>
 
+  <section class="block" id="franchiseSection" style="display:none;">
+    <div class="block-head"><h2 id="franchiseTitle">Universe</h2><span class="count">FRANCHISE</span></div>
+    <div class="grid" id="franchiseGrid"></div>
+  </section>
+
+  <section class="block" id="similarSection" style="display:none;">
+    <div class="block-head"><h2>Isi Vibe Ki Aur</h2><span class="count">SIMILAR</span></div>
+    <div class="grid" id="similarGrid"></div>
+  </section>
+
   <section class="block" id="resultsSection" style="display:none;">
     <div class="block-head"><h2>Tere Liye</h2><span class="count" id="resultsCount"></span></div>
     <div class="ai-note" id="aiExplain"></div>
     <div class="grid" id="resultsGrid"></div>
+    <div class="pager" id="resultsPager"></div>
   </section>
 
   <section class="block">
     <div class="block-head"><h2>Aa Rahi Hain</h2><span class="count">UPCOMING</span></div>
     <div class="grid" id="upcomingGrid"><div class="empty">API key daal ke load karo →</div></div>
+    <div class="pager" id="upcomingPager"></div>
   </section>
 
   <section class="block banned">
     <div class="block-head"><h2>Banned Reel</h2><span class="count">CONTROVERSIAL / BANNED WORLDWIDE</span></div>
     <div class="grid" id="bannedGrid"><div class="empty">API key daal ke load karo →</div></div>
+    <div class="pager" id="bannedPager"></div>
   </section>
 
 </div>
@@ -340,7 +364,19 @@ const BANNED_LIST = [
   {title:"Fahrenheit 9/11", why:"Kuch regions mein political content ki wajah se release nahi hui."},
   {title:"Battle of Algiers", why:"France mein sallon tak officially banned raha, colonial history par."},
   {title:"Lipstick Under My Burkha", why:"India mein CBFC ne pehle certificate dene se mana kar diya tha."},
-  {title:"The Wolf of Wall Street", why:"Kai Middle Eastern countries mein content ke liye banned/heavily cut."}
+  {title:"The Wolf of Wall Street", why:"Kai Middle Eastern countries mein content ke liye banned/heavily cut."},
+  {title:"Fire", why:"India mein religious groups ke protest ke baad screenings rok di gayi thi."},
+  {title:"Black Friday", why:"Legal proceedings ki wajah se India mein release delay/ban hua tha."},
+  {title:"The Last Temptation of Christ", why:"Kai Christian-majority countries mein religious content ke liye banned."},
+  {title:"Pink Flamingos", why:"Extreme content ke liye kai countries mein banned raha."},
+  {title:"Noah", why:"Middle East ke kai countries mein religious depiction ke liye banned."},
+  {title:"The Nightingale", why:"Australia mein violent content warnings ke saath heavily restricted screenings."},
+  {title:"Kids", why:"Explicit teen content ke liye kai regions mein banned/restricted raha."},
+  {title:"Grbavica", why:"War-time sensitive content ki wajah se kuch regions mein controversial raha."},
+  {title:"Padmaavat", why:"India mein release se pehle kai states ne protest ki wajah se ban lagaya tha."},
+  {title:"The Passion of the Christ", why:"Religious depiction ki wajah se kuch countries mein banned raha."},
+  {title:"Basic Instinct", why:"Explicit content ke liye kai countries mein cut/banned kiya gaya."},
+  {title:"Border", why:"Political sensitivity ki wajah se kuch countries mein screening restrict hui."}
 ];
 
 // ⚠️ Paste your own free TMDB API key between the quotes below.
@@ -355,23 +391,33 @@ async function tmdbFetch(path, key){
   return res.json();
 }
 
-async function loadSideSections(){
+let upcomingPageState = 1;
+let bannedPageState = 1;
+
+async function loadUpcomingPage(page){
   const key = getKey();
   if(!key || key === "PASTE_YOUR_TMDB_KEY_HERE") return;
-
-  // Upcoming
+  upcomingPageState = page;
+  const {tmdbPage, range} = tmdbPageAndSlice(page);
   try{
-    const up = await tmdbFetch('/movie/upcoming?language=en-US&page=1', key);
-    renderGrid('upcomingGrid', up.results.slice(0,10).map(m=>({
-      title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1),
-      poster:m.poster_path
+    const up = await tmdbFetch(`/movie/upcoming?language=en-US&page=${tmdbPage}`, key);
+    const slice = up.results.slice(range[0], range[1]);
+    renderGrid('upcomingGrid', slice.map(m=>({
+      title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1), poster:m.poster_path
     })));
+    renderPager('upcomingPager', page, Math.min(up.total_pages*2, 40), loadUpcomingPage);
   }catch(e){ document.getElementById('upcomingGrid').innerHTML = '<div class="empty">Load nahi hua — key check karo</div>'; }
+}
 
-  // Banned/controversial - search each title for real poster
+async function loadBannedPage(page){
+  const key = getKey();
+  if(!key || key === "PASTE_YOUR_TMDB_KEY_HERE") return;
+  bannedPageState = page;
+  const startIdx = (page-1)*10;
+  const pageItems = BANNED_LIST.slice(startIdx, startIdx+10);
   try{
     const results = [];
-    for(const item of BANNED_LIST){
+    for(const item of pageItems){
       const s = await tmdbFetch(`/search/movie?query=${encodeURIComponent(item.title)}`, key);
       const m = s.results && s.results[0];
       results.push({
@@ -381,9 +427,37 @@ async function loadSideSections(){
       });
     }
     renderBannedGrid(results);
+    renderPager('bannedPager', page, Math.ceil(BANNED_LIST.length/10), loadBannedPage);
   }catch(e){ document.getElementById('bannedGrid').innerHTML = '<div class="empty">Load nahi hua — key check karo</div>'; }
 }
 
+async function loadSideSections(){
+  loadUpcomingPage(1);
+  loadBannedPage(1);
+}
+
+function renderPager(elId, current, totalPages, onClick){
+  const el = document.getElementById(elId);
+  totalPages = Math.max(1, Math.min(totalPages, 40));
+  const start = Math.max(1, current-2);
+  const end = Math.min(totalPages, start+4);
+  let html = '';
+  if(current>1) html += `<button class="pg-btn" data-p="${current-1}">‹</button>`;
+  for(let p=start;p<=end;p++){
+    html += `<button class="pg-btn ${p===current?'active':''}" data-p="${p}">${p}</button>`;
+  }
+  if(current<totalPages) html += `<button class="pg-btn" data-p="${current+1}">›</button>`;
+  el.innerHTML = html;
+  el.querySelectorAll('.pg-btn').forEach(b=>{
+    b.addEventListener('click', ()=> onClick(parseInt(b.dataset.p)));
+  });
+}
+
+function tmdbPageAndSlice(ourPage){
+  const tmdbPage = Math.ceil(ourPage/2);
+  const range = (ourPage % 2 === 1) ? [0,10] : [10,20];
+  return {tmdbPage, range};
+}
 function posterUrl(path){
   return path ? `https://image.tmdb.org/t/p/w342${path}` : 'https://via.placeholder.com/342x513/12161d/8D95A3?text=No+Poster';
 }
@@ -437,70 +511,4 @@ function interpretMood(mood){
   const lower = mood.toLowerCase();
   let matched = [];
   let line = "";
-  for(const rule of MOOD_RULES){
-    if(rule.words.some(w => lower.includes(w))){
-      matched.push(...rule.genres);
-      if(!line) line = rule.line;
-    }
-  }
-  if(matched.length === 0){
-    matched = ['drama','comedy'];
-    line = "Tera mood generic laga, toh popular drama/comedy mila rahe hain.";
-  }
-  return {
-    genres: [...new Set(matched)].slice(0,3),
-    explanation: line
-  };
-}
-
-async function findMovies(){
-  const key = getKey();
-  const mood = document.getElementById('moodInput').value.trim();
-  const btn = document.getElementById('searchBtn');
-  const resultsSection = document.getElementById('resultsSection');
-  const grid = document.getElementById('resultsGrid');
-
-  if(!key || key === "PASTE_YOUR_TMDB_KEY_HERE"){ alert('App owner ne abhi TMDB key set nahi ki — code mein TMDB_API_KEY daalni baaki hai.'); return; }
-  if(!mood){ alert('Apna mood toh likho!'); return; }
-
-  btn.disabled = true; btn.textContent = 'SOCH RAHA HAI...';
-  resultsSection.style.display = 'block';
-  grid.innerHTML = '';
-  document.getElementById('aiExplain').textContent = '';
-  document.getElementById('resultsCount').textContent = '';
-  const spinner = document.createElement('div');
-  spinner.className = 'spinner';
-  grid.parentElement.insertBefore(spinner, grid);
-
-  try{
-    const interpreted = await interpretMood(mood);
-    const genreIds = interpreted.genres.map(g=>GENRE_MAP[g.toLowerCase()]).filter(Boolean).join(',');
-    const lang = document.getElementById('langFilter').value;
-
-    let url = `/discover/movie?sort_by=popularity.desc&vote_count.gte=100`;
-    if(genreIds) url += `&with_genres=${genreIds}`;
-    if(lang) url += `&with_original_language=${lang}`;
-
-    const results = await tmdbFetch(url, key);
-    spinner.remove();
-
-    document.getElementById('aiExplain').textContent = '💬 ' + (interpreted.explanation || '');
-    document.getElementById('resultsCount').textContent = results.results.length + ' MILI';
-
-    renderGrid('resultsGrid', results.results.slice(0,15).map(m=>({
-      title:m.title, year:(m.release_date||'').slice(0,4), rating:m.vote_average?.toFixed(1),
-      poster:m.poster_path
-    })));
-  }catch(e){
-    spinner.remove();
-    grid.innerHTML = '<div class="empty">Kuch gadbad ho gayi — API key check karo ya dobara try karo.</div>';
-    console.error(e);
-  }finally{
-    btn.disabled = false; btn.textContent = '🎬 FILM DHUNDO';
-  }
-}
-
-loadSideSections();
-</script>
-</body>
-</html>
+  for(const rule of MOOD_
