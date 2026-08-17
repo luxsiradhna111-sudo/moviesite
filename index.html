@@ -476,12 +476,18 @@
     <div class="pager" id="resultsPager"></div>
   </section>
 
+  <section class="block" id="castSection" style="display:none;">
+    <div class="block-head"><h2>Cast</h2><span class="count">ACTORS &amp; ACTRESSES</span></div>
+    <div class="grid people-grid" id="castGrid"></div>
+  </section>
+
   <section class="block" id="franchiseSection" style="display:none;">
     <div class="block-head"><h2 id="franchiseTitle">Universe</h2><span class="count">FRANCHISE</span></div>
     <div class="grid" id="franchiseGrid"></div>
   </section>
 
   <section class="block" id="actorSection" style="display:none;">
+    <div id="actorProfile" class="people-grid grid" style="max-width:130px;margin-bottom:16px;"></div>
     <div class="block-head"><h2 id="actorTitle">Actor</h2><span class="count" id="actorCount">FILMOGRAPHY</span></div>
     <div class="grid" id="actorGrid"></div>
     <div class="pager" id="actorPager"></div>
@@ -948,6 +954,7 @@ async function findMovies(){
   franchiseSection.style.display = 'none';
   similarSection.style.display = 'none';
   document.getElementById('actorSection').style.display = 'none';
+  document.getElementById('castSection').style.display = 'none';
   grid.innerHTML = '';
   document.getElementById('aiExplain').textContent = '';
   document.getElementById('resultsCount').textContent = '';
@@ -961,8 +968,15 @@ async function findMovies(){
     const strongMatch = titleSearch.results && titleSearch.results.length > 0 ? titleSearch.results[0] : null;
 
     if(strongMatch){
-      const details = await tmdbFetch(`/${mediaType}/${strongMatch.id}?append_to_response=similar`, key);
+      const details = await tmdbFetch(`/${mediaType}/${strongMatch.id}?append_to_response=similar,credits`, key);
       const matchTitle = strongMatch.title || strongMatch.name;
+
+      // Cast — actors/actresses of this movie/show, photo + name, clickable
+      const castList = (details.credits && details.credits.cast || []).filter(c => c.profile_path).slice(0,16);
+      if(castList.length){
+        renderPersonGrid('castGrid', castList.map(c=>({id:c.id, name:c.name, photo:c.profile_path})));
+        document.getElementById('castSection').style.display = 'block';
+      }
 
       // Franchise/universe — only exists for movies
       if(mediaType === 'movie' && details.belongs_to_collection){
@@ -1006,6 +1020,7 @@ async function findMovies(){
         uniqueCast.forEach(m => { m.title = m.title || m.name; m.release_date = m.release_date || m.first_air_date; });
         uniqueCast.sort((a,b) => a.title.localeCompare(b.title)); // A to Z
 
+        renderPersonGrid('actorProfile', [{id:personMatch.id, name:personMatch.name, photo:personMatch.profile_path}]);
         document.getElementById('actorTitle').textContent = personMatch.name + ' — Poori Filmography';
         document.getElementById('actorCount').textContent = uniqueCast.length + (mediaType==='movie' ? ' MOVIES' : ' SHOWS');
         renderGrid('actorGrid', uniqueCast.slice(0,10).map(m=>({
