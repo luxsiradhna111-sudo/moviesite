@@ -529,7 +529,7 @@
   <p class="tagline">Apna mood batayein — AI duniya bhar ki filmon se poster ke saath suggest karega.</p>
   <a href="https://github.com/luxsiradhna111-sudo/moviesite/raw/refs/heads/main/MoodTalkies%20by%20VISHESH%20BAINSLA.apk" class="download-app" download>⬇ Download Our Android App</a>
 
-  <div class="media-toggle">
+  <div class="media-toggle" id="mediaToggle">
     <span class="mt-indicator" id="mtIndicator"></span>
     <button class="mt-btn active" id="btnMovie" onclick="setMediaType('movie')">🎬 Movies</button>
     <button class="mt-btn" id="btnTv" onclick="setMediaType('tv')">📺 TV Shows</button>
@@ -623,9 +623,9 @@
   <span style="opacity:0.7;">movie data by TMDB · not affiliated with TMDB</span>
 </footer>
 
-<div id="movieModal" class="modal-backdrop" onclick="if(event.target===this) closeMovieModal()">
+<div id="movieModal" class="modal-backdrop" onclick="if(event.target===this) history.back()">
   <div class="modal-box">
-    <button class="modal-close" onclick="closeMovieModal()">✕</button>
+    <button class="modal-close" onclick="history.back()">✕</button>
     <div id="modalBody" class="modal-body">
       <div class="spinner"></div>
     </div>
@@ -641,8 +641,8 @@ const GENRE_MAP = {
 
 const GENRE_MAP_TV = {
   action:10759, adventure:10759, animation:16, comedy:35, crime:80, documentary:99,
-  drama:18, family:10751, fantasy:10765, history:36, horror:9648, music:10402,
-  mystery:9648, romance:10749, "sci-fi":10765, scifi:10765, thriller:9648, war:10768, western:37
+  drama:18, family:10751, fantasy:10765, history:18, horror:9648, music:10751,
+  mystery:9648, romance:18, "sci-fi":10765, scifi:10765, thriller:9648, war:10768, western:37
 };
 
 let mediaType = 'movie'; // 'movie' or 'tv' — toggled by user
@@ -699,7 +699,7 @@ async function loadUpcomingPage(page){
   if(!key || key === "PASTE_YOUR_TMDB_KEY_HERE") return;
   upcomingPageState = page;
   const {tmdbPage, range} = tmdbPageAndSlice(page);
-  const endpoint = mediaType === 'movie' ? '/movie/upcoming' : '/tv/on_the_air';
+  const endpoint = mediaType === 'movie' ? '/movie/upcoming' : '/tv/popular';
   try{
     const up = await tmdbFetch(`${endpoint}?language=en-US&page=${tmdbPage}`, key);
     const slice = up.results.slice(range[0], range[1]);
@@ -749,6 +749,23 @@ function personPhotoUrl(path){
 }
 
 let actorsBrowsePageState = 1;
+const INDIAN_ACTORS = [
+  // Bollywood
+  "Shah Rukh Khan","Aamir Khan","Salman Khan","Amitabh Bachchan","Deepika Padukone",
+  "Alia Bhatt","Priyanka Chopra","Ranveer Singh","Hrithik Roshan","Kareena Kapoor",
+  "Ranbir Kapoor","Katrina Kaif","Akshay Kumar","Kangana Ranaut","Vicky Kaushal",
+  // Kollywood (Tamil)
+  "Rajinikanth","Kamal Haasan","Vijay","Ajith Kumar","Dhanush",
+  "Suriya","Vikram","Nayanthara",
+  // Tollywood (Telugu)
+  "Chiranjeevi","Prabhas","Mahesh Babu","Allu Arjun","Ram Charan",
+  "Samantha Ruth Prabhu","Jr NTR",
+  // Mollywood (Malayalam)
+  "Mohanlal","Mammootty","Fahadh Faasil",
+  // Sandalwood (Kannada)
+  "Yash","Sudeep"
+];
+
 async function loadActorsBrowsePage(page){
   const key = getKey();
   if(!key || key === "PASTE_YOUR_TMDB_KEY_HERE") return;
@@ -756,8 +773,23 @@ async function loadActorsBrowsePage(page){
   const {tmdbPage, range} = tmdbPageAndSlice(page);
   try{
     const data = await tmdbFetch(`/person/popular?page=${tmdbPage}`, key);
-    const slice = data.results.slice(range[0], range[1]).filter(p => p.known_for_department === 'Acting');
-    renderPersonGrid('actorsBrowseGrid', slice.map(p=>({id:p.id, name:p.name, photo:p.profile_path})));
+    const slice = data.results.slice(range[0], range[1]).filter(p => p.known_for_department === 'Acting')
+      .map(p=>({id:p.id, name:p.name, photo:p.profile_path}));
+
+    // guarantee Indian cinema representation on every page (Bollywood/Kollywood/Tollywood/Mollywood/Sandalwood)
+    const startIdx = ((page-1)*3) % INDIAN_ACTORS.length;
+    const namesToFetch = [0,1,2].map(i => INDIAN_ACTORS[(startIdx+i) % INDIAN_ACTORS.length]);
+    const indianResults = await Promise.all(namesToFetch.map(name =>
+      tmdbFetch(`/search/person?query=${encodeURIComponent(name)}`, key)
+        .then(r => r.results && r.results[0])
+        .catch(() => null)
+    ));
+    const indianItems = indianResults.filter(Boolean).map(p=>({id:p.id, name:p.name, photo:p.profile_path}));
+
+    const seen = new Set();
+    const merged = [...indianItems, ...slice].filter(p=>{ if(seen.has(p.id)) return false; seen.add(p.id); return true; }).slice(0,10);
+
+    renderPersonGrid('actorsBrowseGrid', merged);
     renderPager('actorsBrowsePager', page, Math.min(data.total_pages*2, 40), loadActorsBrowsePage);
   }catch(e){ document.getElementById('actorsBrowseGrid').innerHTML = '<div class="empty">Load nahi hua — key check karo</div>'; }
 }
@@ -983,6 +1015,7 @@ async function openMovieModal(id, kind){
   modal.classList.add('open');
   body.innerHTML = '<div class="spinner"></div>';
   document.body.style.overflow = 'hidden';
+  history.pushState({moodtalkiesModal:true}, '');
 
   try{
     const m = await tmdbFetch(`/${kind}/${id}?append_to_response=credits`, key);
@@ -1039,6 +1072,15 @@ function closeMovieModal(){
   document.getElementById('movieModal').classList.remove('open');
   document.body.style.overflow = '';
 }
+
+// intercept the device/browser back button: if the modal is open, close it
+// instead of letting the app try to exit or navigate away
+window.addEventListener('popstate', function(){
+  const modal = document.getElementById('movieModal');
+  if(modal.classList.contains('open')){
+    closeMovieModal();
+  }
+});
 
 async function findMovies(){
   const key = getKey();
@@ -1207,13 +1249,33 @@ function setMediaType(type){
   document.querySelector('.media-toggle').classList.toggle('tv', type === 'tv');
   document.getElementById('bannedSection').style.display = type === 'movie' ? 'block' : 'none';
   const upcomingHeading = document.querySelector('#upcomingGrid').closest('section').querySelector('h2');
-  upcomingHeading.textContent = type === 'movie' ? 'Aa Rahi Hain' : 'Abhi Chal Rahi Hain';
+  upcomingHeading.textContent = type === 'movie' ? 'Aa Rahi Hain' : 'Popular Shows';
   document.getElementById('resultsSection').style.display = 'none';
   document.getElementById('franchiseSection').style.display = 'none';
   document.getElementById('similarSection').style.display = 'none';
   document.getElementById('actorSection').style.display = 'none';
   loadUpcomingPage(1);
 }
+
+// ---------- Swipe gesture for media toggle ----------
+(function initToggleSwipe(){
+  const toggle = document.getElementById('mediaToggle');
+  let startX = 0, startY = 0, tracking = false;
+  toggle.addEventListener('touchstart', (e)=>{
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, {passive:true});
+  toggle.addEventListener('touchend', (e)=>{
+    if(!tracking) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if(Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(dy)) return; // not a clear horizontal swipe
+    if(dx > 0 && mediaType !== 'tv'){ setMediaType('tv'); }
+    else if(dx < 0 && mediaType !== 'movie'){ setMediaType('movie'); }
+  }, {passive:true});
+})();
 
 // ---------- Voice search ----------
 function startVoiceSearch(){
