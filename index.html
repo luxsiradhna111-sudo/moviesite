@@ -33,7 +33,11 @@
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
   body, .card, .ticket-window, button, .pg-btn{ transition:background-color .2s ease, color .2s ease, border-color .2s ease; }
-  *{box-sizing:border-box;margin:0;padding:0;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;}
+  a, button, .card, .person-card, .mt-btn, .pg-btn, .theme-toggle, .mic-btn{-webkit-tap-highlight-color:transparent;outline:none;}
+  .card:active{transform:scale(0.96);}
+  .person-card:active .person-photo{transform:scale(0.94);}
+  .pg-btn:active, .mt-btn:active, .theme-toggle:active, .mic-btn:active, button.primary:active{transform:scale(0.94);}
   body{
     background:var(--bg);
     color:var(--paper);
@@ -105,9 +109,9 @@
 
   header.marquee{
     text-align:center;
-    padding:38px 20px 26px;
+    padding:38px 16px 26px;
     position:relative;
-    overflow:hidden;
+    overflow:visible;
     z-index:2;
   }
   header.marquee::before{
@@ -138,14 +142,15 @@
     font-family:'Cormorant Garamond',serif;
     font-weight:700;
     font-style:italic;
-    font-size:clamp(44px,12vw,76px);
-    letter-spacing:1px;
+    font-size:clamp(40px,11vw,68px);
+    letter-spacing:0.5px;
+    padding:0 6px;
     background:linear-gradient(180deg, #F0DDB0 0%, var(--gold) 55%, #8A6B36 100%);
     -webkit-background-clip:text;
     background-clip:text;
     color:transparent;
     filter:drop-shadow(0 0 26px rgba(201,164,97,0.35));
-    line-height:1.05;
+    line-height:1.15;
     margin-top:6px;
   }
   .tagline{
@@ -262,19 +267,32 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.2);
   }
   .media-toggle{
-    display:inline-flex;gap:6px;margin-top:16px;
+    position:relative;
+    display:flex;width:280px;max-width:90vw;margin:16px auto 0;
     background:rgba(255,255,255,0.06);
     -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
     border:1px solid rgba(255,255,255,0.13);
-    padding:4px;border-radius:10px;
+    padding:4px;border-radius:12px;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);
   }
+  .mt-indicator{
+    position:absolute;top:4px;left:4px;bottom:4px;
+    width:calc(50% - 4px);
+    background:linear-gradient(135deg, #E2C387, var(--gold) 55%, #A8813F);
+    border-radius:9px;
+    box-shadow:0 4px 14px -4px rgba(201,164,97,0.6), inset 0 1px 0 rgba(255,255,255,0.35);
+    transition:transform .35s cubic-bezier(.4,0,.2,1);
+    z-index:0;
+  }
+  .media-toggle.tv .mt-indicator{transform:translateX(100%);}
   .mt-btn{
+    position:relative;z-index:1;flex:1;
     background:transparent;border:none;color:var(--muted);
     font-family:'IBM Plex Mono',monospace;font-size:12px;
-    padding:8px 16px;border-radius:7px;cursor:pointer;
+    padding:8px 10px;border-radius:7px;cursor:pointer;
+    transition:color .25s ease;
   }
-  .mt-btn.active{background:var(--gold);color:#241a05;font-weight:700;}
+  .mt-btn.active{color:#241a05;font-weight:700;}
 
   .input-with-mic{position:relative;}
   .input-with-mic textarea{padding-right:52px;}
@@ -369,15 +387,18 @@
 
   /* Movie detail modal */
   .modal-backdrop{
-    display:none;
+    display:flex;
     position:fixed;inset:0;
     background:rgba(0,0,0,0.75);
-    backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(6px);
+    backdrop-filter:blur(6px);
     z-index:100;
     align-items:flex-end;
     justify-content:center;
+    opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity .3s ease, visibility .3s ease;
   }
-  .modal-backdrop.open{display:flex;}
+  .modal-backdrop.open{opacity:1;visibility:visible;pointer-events:auto;}
   .modal-box{
     background:rgba(20,20,23,0.72);
     -webkit-backdrop-filter:blur(28px) saturate(160%);
@@ -509,6 +530,7 @@
   <a href="https://github.com/luxsiradhna111-sudo/moviesite/raw/refs/heads/main/MoodTalkies%20by%20VISHESH%20BAINSLA.apk" class="download-app" download>⬇ Download Our Android App</a>
 
   <div class="media-toggle">
+    <span class="mt-indicator" id="mtIndicator"></span>
     <button class="mt-btn active" id="btnMovie" onclick="setMediaType('movie')">🎬 Movies</button>
     <button class="mt-btn" id="btnTv" onclick="setMediaType('tv')">📺 TV Shows</button>
   </div>
@@ -954,6 +976,10 @@ async function openMovieModal(id, kind){
   const key = getKey();
   const modal = document.getElementById('movieModal');
   const body = document.getElementById('modalBody');
+  const box = modal.querySelector('.modal-box');
+  box.style.animation = 'none';
+  void box.offsetWidth; // force reflow so the animation replays
+  box.style.animation = '';
   modal.classList.add('open');
   body.innerHTML = '<div class="spinner"></div>';
   document.body.style.overflow = 'hidden';
@@ -1178,6 +1204,7 @@ function setMediaType(type){
   mediaType = type;
   document.getElementById('btnMovie').classList.toggle('active', type === 'movie');
   document.getElementById('btnTv').classList.toggle('active', type === 'tv');
+  document.querySelector('.media-toggle').classList.toggle('tv', type === 'tv');
   document.getElementById('bannedSection').style.display = type === 'movie' ? 'block' : 'none';
   const upcomingHeading = document.querySelector('#upcomingGrid').closest('section').querySelector('h2');
   upcomingHeading.textContent = type === 'movie' ? 'Aa Rahi Hain' : 'Abhi Chal Rahi Hain';
