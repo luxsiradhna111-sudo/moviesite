@@ -664,7 +664,7 @@
     .trailer-pill::before,.ott-pill::before,button::before,.pg-btn::before,.download-app::before{display:none;}
   }
 
-</style>
+ .modal-actions{display:flex;gap:10px;margin:16px 0 4px;flex-wrap:wrap}.movie-action{flex:1;min-width:140px;padding:11px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.18);color:var(--paper);background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.045));backdrop-filter:blur(18px) saturate(180%);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;transition:transform .16s cubic-bezier(.34,1.56,.64,1),background .18s ease,border-color .18s ease}.movie-action:active{transform:scale(.92)}.movie-action.active{color:var(--gold);border-color:rgba(201,164,97,.5);background:rgba(201,164,97,.13)}.card-save-row{position:absolute;top:8px;right:8px;display:flex;gap:6px;z-index:3}.card-save-btn{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(10,10,12,.55);color:#fff;backdrop-filter:blur(14px);cursor:pointer;font-size:16px;transition:transform .14s ease}.card-save-btn:active{transform:scale(.84)}.card-save-btn.active{color:var(--gold);background:rgba(201,164,97,.18)}</style>
 </head>
 <body>
 
@@ -1041,21 +1041,16 @@ function posterUrl(path){
   return path ? `https://image.tmdb.org/t/p/w342${path}` : 'https://via.placeholder.com/342x513/12161d/8D95A3?text=No+Poster';
 }
 
-function renderGrid(elId, items){
-  const el = document.getElementById(elId);
-  if(!items.length){ el.innerHTML = '<div class="empty">Kuch nahi mila</div>'; return; }
-  el.innerHTML = items.map(m=>`
-    <div class="card" onclick="openMovieModal(${m.id}, '${m.mediaKind || mediaType}')">
-      <img class="poster" src="${posterUrl(m.poster)}" alt="${m.title}" loading="lazy"/>
-      <div class="perf"></div>
-      <div class="card-body">
-        <div class="name">${m.title}</div>
-        <div class="meta"><span>${m.year||'—'}</span><span class="rating">★ ${m.rating||'—'}</span></div>
-      </div>
-    </div>
-  `).join('');
-}
-
+function getSavedList(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return[]}}
+function setSavedList(key,list){try{localStorage.setItem(key,JSON.stringify(list))}catch(e){}}
+function isSaved(key,id,kind){return getSavedList(key).some(x=>String(x.id)===String(id)&&x.kind===kind)}
+function toggleSaved(key,movie){const list=getSavedList(key),i=list.findIndex(x=>String(x.id)===String(movie.id)&&x.kind===movie.kind);if(i>=0)list.splice(i,1);else list.unshift(movie);setSavedList(key,list);return i<0}
+function safeMovieObj(m,kind){return{id:m.id,kind:kind||m.mediaKind||mediaType,title:m.title||m.name||'Untitled',year:((m.release_date||m.first_air_date||m.year)||'').slice(0,4),rating:m.vote_average??m.rating??'',poster:m.poster_path||m.poster||''}}
+function quickSaveMovie(id,kind,movie,mode){const obj=typeof movie==='string'?JSON.parse(movie):movie;obj.id=id;obj.kind=kind;const added=toggleSaved(mode==='like'?'mt_liked':'mt_watchlist',obj);renderSavedSection();document.querySelectorAll('.card').forEach(c=>{if(c.getAttribute('onclick')?.includes(`openMovieModal(${id}, '${kind}')`)){const bs=c.querySelectorAll('.card-save-btn');if(mode==='watchlist'&&bs[0])bs[0].classList.toggle('active',added);if(mode==='like'&&bs[1])bs[1].classList.toggle('active',added)}})}
+function toggleModalSave(mode){const modal=document.getElementById('movieModal'),id=modal.dataset.movieId,kind=modal.dataset.movieKind;if(!id)return;const obj=JSON.parse(modal.dataset.movieObj||'{}'),added=toggleSaved(mode==='like'?'mt_liked':'mt_watchlist',obj),btn=document.getElementById(mode==='like'?'modalLikeBtn':'modalWatchBtn');if(btn){btn.classList.toggle('active',added);btn.innerHTML=mode==='like'?(added?'♥ LIKED':'♡ LIKE'):(added?'🔖 SAVED':'🔖 WATCHLIST')}renderSavedSection()}
+function renderSavedSection(){const n=document.getElementById('navWatchlist'),l=document.getElementById('navLike');if(n)n.innerHTML=`<span>♡</span>WATCHLIST (${getSavedList('mt_watchlist').length})`;if(l)l.innerHTML=`<span>♥</span>LIKED (${getSavedList('mt_liked').length})`}
+function showSavedItems(mode){const items=getSavedList(mode==='like'?'mt_liked':'mt_watchlist'),section=document.getElementById('resultsSection');if(!section)return;document.querySelectorAll('section.block').forEach(x=>{if(x!==section)x.style.display='none'});section.style.display='block';document.getElementById('resultsCount').textContent=items.length+' SAVED';document.querySelector('#resultsSection h2').textContent=mode==='like'?'Liked Movies':'My Watchlist';document.getElementById('aiExplain').textContent=mode==='like'?'❤️ Tumhari liked titles':'🔖 Tumhari watchlist';renderGrid('resultsGrid',items);document.getElementById('resultsPager').innerHTML='';window.scrollTo({top:0,behavior:'smooth'})}
+function renderGrid(elId,items){const el=document.getElementById(elId);if(!items.length){el.innerHTML='<div class="empty">Kuch nahi mila</div>';return}el.innerHTML=items.map(m=>{const kind=m.mediaKind||m.kind||mediaType,saved=isSaved('mt_watchlist',m.id,kind),liked=isSaved('mt_liked',m.id,kind),obj=JSON.stringify(safeMovieObj(m,kind)).replace(/"/g,'&quot;');return`<div class="card" onclick="openMovieModal(${m.id}, '${kind}')"><div class="card-save-row"><button class="card-save-btn ${saved?'active':''}" title="Watchlist" onclick="event.stopPropagation();quickSaveMovie(${m.id},'${kind}','${obj}','watchlist')">🔖</button><button class="card-save-btn ${liked?'active':''}" title="Like" onclick="event.stopPropagation();quickSaveMovie(${m.id},'${kind}','${obj}','like')">♥</button></div><img class="poster" src="${posterUrl(m.poster)}" alt="${escapeHtml(m.title||'')}" loading="lazy"/><div class="perf"></div><div class="card-body"><div class="name">${escapeHtml(m.title||'')}</div><div class="meta"><span>${m.year||'—'}</span><span class="rating">★ ${m.rating||'—'}</span></div></div></div>`}).join('') }
 function renderBannedGrid(items){
   const el = document.getElementById('bannedGrid');
   el.innerHTML = items.map(m=>`
@@ -1244,6 +1239,7 @@ async function openMovieModal(id, kind){
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
   body.innerHTML = '<div class="modal-content modal-loading"><div class="spinner"></div></div>';
+  modal.dataset.movieId=String(id); modal.dataset.movieKind=kind;
   history.pushState({moodtalkiesModal:true}, '');
 
   try{
@@ -1274,6 +1270,7 @@ async function openMovieModal(id, kind){
         : `<a class="ott-pill" href="${url}" target="_blank" rel="noopener noreferrer" title="${direct ? 'Official OTT search/watch page' : 'TMDB watch options'}">${escapeHtml(p.provider_name)} <span class="ott-arrow">↗</span></a>`;
     }).join('') : '<span class="empty">India mein OTT info uplabdh nahi hai</span>';
 
+    modal.dataset.movieObj=JSON.stringify(safeMovieObj(m,kind));
     body.innerHTML = `
       <img class="modal-poster" src="${posterUrl(m.poster_path)}" alt="${escapeHtml(title)}"/>
       <div class="modal-content">
@@ -1284,7 +1281,7 @@ async function openMovieModal(id, kind){
         </div>
         <div class="modal-section-label">Cast</div>
         <div class="modal-cast">${escapeHtml(castNames)}</div>
-        <div class="modal-section-label">Description</div>
+        <div class="modal-actions"><button id="modalWatchBtn" class="movie-action ${isSaved('mt_watchlist',id,kind)?'active':''}" onclick="toggleModalSave('watchlist')">${isSaved('mt_watchlist',id,kind)?'🔖 SAVED':'🔖 WATCHLIST'}</button><button id="modalLikeBtn" class="movie-action ${isSaved('mt_liked',id,kind)?'active':''}" onclick="toggleModalSave('like')">${isSaved('mt_liked',id,kind)?'♥ LIKED':'♡ LIKE'}</button></div><div class="modal-section-label">Description</div>
         <div class="modal-overview">${escapeHtml(m.overview || 'Description uplabdh nahi hai.')}</div>
         <div class="modal-section-label">Trailers</div>
         <div class="trailer-list">${trailerHtml}</div>
@@ -1551,16 +1548,9 @@ function bottomNavHome(){
   document.getElementById('moodInput')?.focus();
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function bottomNavWatchlist(){
-  setNavActive('navWatchlist');
-  const saved=JSON.parse(localStorage.getItem('mt_watchlist')||'[]');
-  alert(saved.length ? `Watchlist mein ${saved.length} title saved hai.` : 'Watchlist abhi empty hai. Movie details se save karna next step hai.');
-}
-function bottomNavLike(){
-  setNavActive('navLike');
-  const liked=JSON.parse(localStorage.getItem('mt_liked')||'[]');
-  alert(liked.length ? `${liked.length} liked title saved hai.` : 'Abhi koi liked movie nahi hai.');
-}
+function bottomNavWatchlist(){ setNavActive('navWatchlist'); showSavedItems('watchlist'); }
+function bottomNavLike(){ setNavActive('navLike'); showSavedItems('like'); }
+renderSavedSection();
 
 // ---------- Voice search ----------
 function startVoiceSearch(){
