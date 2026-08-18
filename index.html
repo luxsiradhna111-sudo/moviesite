@@ -532,10 +532,18 @@
     font-family:'IBM Plex Mono',monospace;
   }
   .ott-pill{
-    background:var(--bg);border:1px solid var(--teal);color:var(--teal);
-    font-size:12px;padding:6px 12px;border-radius:20px;
-    font-family:'IBM Plex Mono',monospace;
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(92,140,135,0.10);
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    border:1px solid var(--teal);color:var(--teal);
+    font-size:12px;padding:7px 12px;border-radius:20px;
+    font-family:'IBM Plex Mono',monospace;text-decoration:none;
+    cursor:pointer;transition:transform .18s ease,background .18s ease,box-shadow .18s ease;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
   }
+  .ott-pill:hover{transform:translateY(-2px);background:rgba(92,140,135,0.20);box-shadow:0 8px 18px -10px rgba(92,140,135,.65);}
+  .ott-pill:active{transform:scale(.95);}
+  .ott-pill .ott-arrow{font-size:10px;opacity:.8;}
   .card:hover{
     transform:translateY(-4px);
     border-color:rgba(201,164,97,0.4);
@@ -600,24 +608,32 @@
     position:relative;z-index:2;
   }
 
-/* ================= LIQUID GLASS / V2 FEATURES ================= */
-.lg-glass{background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.035));backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 18px 50px -28px rgba(0,0,0,.8)}
-.mood-chips{display:flex;gap:8px;overflow-x:auto;padding:12px 1px 2px;scrollbar-width:none}.mood-chips::-webkit-scrollbar{display:none}.mood-chip{flex:0 0 auto;border:1px solid rgba(255,255,255,.15);color:var(--paper);background:rgba(255,255,255,.07);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:8px 12px;border-radius:999px;font:600 11px 'IBM Plex Mono',monospace;cursor:pointer;transition:.2s}.mood-chip:hover,.mood-chip:active{border-color:var(--gold);transform:translateY(-1px)}
-.watch-section{display:none}.watch-section.show{display:block}.watch-btn{position:absolute;right:8px;top:8px;z-index:3;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(10,10,12,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}.watch-btn.saved{color:#ff6b81;border-color:rgba(255,107,129,.6);background:rgba(255,70,100,.14)}
-.match-badge{position:absolute;left:8px;top:8px;z-index:2;padding:4px 7px;border-radius:999px;background:rgba(12,15,20,.65);border:1px solid rgba(201,164,97,.45);color:var(--gold);font:600 9px 'IBM Plex Mono',monospace;backdrop-filter:blur(10px)}
-.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.modal-action{flex:1;min-width:120px;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.07);color:var(--paper);font:600 11px 'IBM Plex Mono',monospace;cursor:pointer;backdrop-filter:blur(12px)}.modal-action.saved{color:#ff6b81;border-color:rgba(255,107,129,.5)}
-.share-toast{position:fixed;left:50%;bottom:86px;transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:120;background:rgba(20,20,23,.78);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(20px);padding:10px 15px;border-radius:999px;color:var(--paper);font:600 11px 'IBM Plex Mono',monospace;transition:.3s}.share-toast.show{opacity:1;transform:translate(-50%,0)}
-.bottom-nav{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:90;width:min(470px,calc(100vw - 24px));display:flex;gap:4px;padding:7px;border-radius:22px;background:rgba(25,25,29,.68);border:1px solid rgba(255,255,255,.16);box-shadow:0 16px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.25);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%)}.bottom-nav button{flex:1;border:0;background:transparent;color:var(--muted);border-radius:16px;padding:8px 5px;font:600 9px 'IBM Plex Mono',monospace;cursor:pointer}.bottom-nav button.active,.bottom-nav button:active{background:rgba(255,255,255,.12);color:var(--gold)}
-/* Water-drop splash */
-#splashScreen{overflow:hidden;background:radial-gradient(circle at 50% 46%,#25252a 0%,#101014 42%,#070709 100%)}
-.splash-water{position:absolute;inset:0;pointer-events:none}.water-drop{position:absolute;width:var(--s);height:var(--s);left:var(--x);top:var(--y);border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.8),rgba(201,164,97,.28) 38%,rgba(255,255,255,.03) 70%);border:1px solid rgba(255,255,255,.24);box-shadow:inset -3px -5px 9px rgba(0,0,0,.18),0 0 22px rgba(201,164,97,.14);filter:blur(.2px);opacity:0;animation:dropToLogo 1.8s var(--d) cubic-bezier(.2,.9,.2,1) forwards}
-@keyframes dropToLogo{0%{opacity:0;transform:translate(0,0) scale(.25)}18%{opacity:.9}72%{opacity:.85}100%{opacity:.15;transform:translate(var(--tx),var(--ty)) scale(1.25)}}
-.splash-title{position:relative;letter-spacing:2px;text-transform:uppercase;text-shadow:0 0 24px rgba(201,164,97,.28);animation:liquidText 2.4s .35s cubic-bezier(.2,.8,.2,1) forwards;opacity:0;clip-path:inset(0 100% 0 0)}
-.splash-sub{text-transform:uppercase;animation:liquidSub 2s 1.05s ease forwards;opacity:0;transform:translateY(10px);letter-spacing:4px}
-@keyframes liquidText{0%{opacity:0;clip-path:inset(0 100% 0 0);filter:url(#liquidWarp) blur(9px);transform:scaleX(.92)}35%{opacity:1}75%{clip-path:inset(0 0 0 0);filter:url(#liquidWarp) blur(2px);transform:scaleX(1.02)}100%{opacity:1;clip-path:inset(0 0 0 0);filter:url(#liquidWarp) blur(0);transform:scaleX(1)}}
-@keyframes liquidSub{to{opacity:1;transform:translateY(0)}}
-@media(prefers-reduced-motion:reduce){.water-drop,.splash-title,.splash-sub{animation:none!important;opacity:1!important;clip-path:none!important;transform:none!important;filter:none!important}}
-@media(max-width:520px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card-body .name{font-size:12.5px}.bottom-nav{bottom:8px}.share-toast{bottom:76px}}
+  /* Universal Liquid Glass controls */
+  button, .pg-btn, .mt-btn, .theme-toggle, .mic-btn, .download-app, .trailer-pill, .ott-pill, .primary, a[class*="btn"], .bottom-nav-item{
+    -webkit-backdrop-filter:blur(18px) saturate(180%);
+    backdrop-filter:blur(18px) saturate(180%);
+  }
+  .trailer-pill, .ott-pill{
+    position:relative; overflow:hidden; cursor:pointer;
+    border:1px solid rgba(255,255,255,.20);
+    background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.045));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 8px 20px -14px rgba(0,0,0,.8);
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease,background .18s ease,border-color .18s ease;
+  }
+  .trailer-pill::before, .ott-pill::before, button::before, .pg-btn::before, .download-app::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 48%,transparent 72%);
+    transform:translateX(-120%); transition:transform .5s ease;
+  }
+  .trailer-pill:hover::before, .ott-pill:hover::before, button:hover::before, .pg-btn:hover::before, .download-app:hover::before{transform:translateX(120%);}
+  .trailer-pill:hover, .ott-pill:hover{transform:translateY(-2px) scale(1.025);border-color:rgba(255,255,255,.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 10px 25px -12px rgba(0,0,0,.9);}
+  .trailer-pill:active, .ott-pill:active, button:active, .pg-btn:active, .download-app:active, .mt-btn:active, .theme-toggle:active, .mic-btn:active{transform:scale(.93);transition-duration:.08s;}
+  button, .pg-btn, .mt-btn, .theme-toggle, .mic-btn, .download-app{position:relative;overflow:hidden;}
+  html[data-theme="light"] .trailer-pill, html[data-theme="light"] .ott-pill, html[data-theme="light"] button, html[data-theme="light"] .pg-btn{background:linear-gradient(135deg,rgba(255,255,255,.62),rgba(255,255,255,.28));border-color:rgba(255,255,255,.75);}
+  @media (prefers-reduced-motion:reduce){
+    .trailer-pill,.ott-pill,button,.pg-btn,.download-app{transition:none!important;}
+    .trailer-pill::before,.ott-pill::before,button::before,.pg-btn::before,.download-app::before{display:none;}
+  }
 
 </style>
 </head>
@@ -630,11 +646,10 @@
       <feDisplacementMap id="dispMap" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </svg>
-  <div class="splash-water"><i class="water-drop" style="--s:8px;--x:10%;--y:12%;--tx:40vw;--ty:30vh;--d:0.00s"></i><i class="water-drop" style="--s:12px;--x:27%;--y:35%;--tx:23vw;--ty:7vh;--d:0.04s"></i><i class="water-drop" style="--s:16px;--x:44%;--y:58%;--tx:6vw;--ty:-16vh;--d:0.09s"></i><i class="water-drop" style="--s:20px;--x:61%;--y:81%;--tx:-11vw;--ty:-39vh;--d:0.14s"></i><i class="water-drop" style="--s:8px;--x:78%;--y:34%;--tx:-28vw;--ty:8vh;--d:0.18s"></i><i class="water-drop" style="--s:12px;--x:13%;--y:57%;--tx:37vw;--ty:-15vh;--d:0.22s"></i><i class="water-drop" style="--s:16px;--x:30%;--y:80%;--tx:20vw;--ty:-38vh;--d:0.27s"></i><i class="water-drop" style="--s:20px;--x:47%;--y:33%;--tx:3vw;--ty:9vh;--d:0.32s"></i><i class="water-drop" style="--s:8px;--x:64%;--y:56%;--tx:-14vw;--ty:-14vh;--d:0.36s"></i><i class="water-drop" style="--s:12px;--x:81%;--y:79%;--tx:-31vw;--ty:-37vh;--d:0.40s"></i><i class="water-drop" style="--s:16px;--x:16%;--y:32%;--tx:34vw;--ty:10vh;--d:0.45s"></i><i class="water-drop" style="--s:20px;--x:33%;--y:55%;--tx:17vw;--ty:-13vh;--d:0.49s"></i><i class="water-drop" style="--s:8px;--x:50%;--y:78%;--tx:0vw;--ty:-36vh;--d:0.54s"></i><i class="water-drop" style="--s:12px;--x:67%;--y:31%;--tx:-17vw;--ty:11vh;--d:0.58s"></i><i class="water-drop" style="--s:16px;--x:84%;--y:54%;--tx:-34vw;--ty:-12vh;--d:0.63s"></i><i class="water-drop" style="--s:20px;--x:19%;--y:77%;--tx:31vw;--ty:-35vh;--d:0.67s"></i><i class="water-drop" style="--s:8px;--x:36%;--y:30%;--tx:14vw;--ty:12vh;--d:0.72s"></i><i class="water-drop" style="--s:12px;--x:53%;--y:53%;--tx:-3vw;--ty:-11vh;--d:0.77s"></i><i class="water-drop" style="--s:16px;--x:70%;--y:76%;--tx:-20vw;--ty:-34vh;--d:0.81s"></i><i class="water-drop" style="--s:20px;--x:87%;--y:29%;--tx:-37vw;--ty:13vh;--d:0.85s"></i><i class="water-drop" style="--s:8px;--x:22%;--y:52%;--tx:28vw;--ty:-10vh;--d:0.90s"></i><i class="water-drop" style="--s:12px;--x:39%;--y:75%;--tx:11vw;--ty:-33vh;--d:0.94s"></i></div>
   <div class="splash-blob"></div>
   <div class="splash-text" id="splashTextWrap">
-    <div class="splash-title">MOODTALKIES</div>
-    <div class="splash-sub">by VISHESH BAINSLA</div>
+    <div class="splash-title">MoodTalkies</div>
+    <div class="splash-sub">by Vishesh Bainsla</div>
   </div>
 </div>
 <script>
@@ -676,14 +691,6 @@
       <div class="input-with-mic">
         <textarea id="moodInput" rows="3" placeholder="Movie/franchise ka naam likhein (jaise 'The Conjuring' ya 'Spider-Man') YA apna mood batayein (jaise 'raat ko akela hu, thriller chahiye')"></textarea>
         <button class="mic-btn" id="micBtn" onclick="startVoiceSearch()" title="Voice se bolein">🎤</button>
-      </div>
-      <div class="mood-chips" aria-label="Quick moods">
-        <button class="mood-chip" onclick="setMoodChip('😔 Sad / Emotional')">😔 Sad</button>
-        <button class="mood-chip" onclick="setMoodChip('😂 Funny / Light mood')">😂 Funny</button>
-        <button class="mood-chip" onclick="setMoodChip('👻 Scary / Horror')">👻 Horror</button>
-        <button class="mood-chip" onclick="setMoodChip('🔥 Action / High energy')">🔥 Action</button>
-        <button class="mood-chip" onclick="setMoodChip('❤️ Romantic / Love')">❤️ Romance</button>
-        <button class="mood-chip" onclick="setMoodChip('🧠 Mind bending / Mystery')">🧠 Mind-bending</button>
       </div>
     </div>
 
@@ -734,11 +741,6 @@
     <div class="grid" id="similarGrid"></div>
   </section>
 
-  <section class="block watch-section" id="watchlistSection">
-    <div class="block-head"><h2>❤️ Meri Watchlist</h2><span class="count" id="watchlistCount">0 SAVED</span></div>
-    <div class="grid" id="watchlistGrid"></div>
-  </section>
-
   <section class="block">
     <div class="block-head"><h2>Aa Rahi Hain</h2><span class="count">UPCOMING</span></div>
     <div class="grid" id="upcomingGrid"><div class="empty">API key daal ke load karo →</div></div>
@@ -767,14 +769,6 @@
 
 </div>
 
-<div class="share-toast" id="shareToast">Link copied</div>
-<nav class="bottom-nav" aria-label="Quick navigation">
-  <button id="navHome" class="active" onclick="navTo('home')">⌂<br>HOME</button>
-  <button id="navSearch" onclick="navTo('search')">⌕<br>SEARCH</button>
-  <button id="navWatch" onclick="navTo('watch')">♡<br>WATCHLIST</button>
-  <button id="navUpcoming" onclick="navTo('upcoming')">◷<br>UPCOMING</button>
-</nav>
-
 <div id="movieModal" class="modal-backdrop" onclick="if(event.target===this) history.back()">
   <div class="modal-box">
     <button class="modal-close" onclick="history.back()">✕</button>
@@ -798,10 +792,6 @@ const GENRE_MAP_TV = {
 };
 
 let mediaType = 'movie'; // 'movie' or 'tv' — toggled by user
-let currentMoodGenres = [];
-let currentModalMovie = null;
-let watchlist = [];
-try { watchlist = JSON.parse(localStorage.getItem('moodtalkies-watchlist') || '[]'); } catch(e) { watchlist = []; }
 
 const BANNED_LIST = [
   {title:"A Clockwork Orange", why:"UK mein 1970s se 1999 tak Kubrick ne khud withdraw kiya tha extreme violence controversy ke baad."},
@@ -992,10 +982,7 @@ function refreshApp(){
   btn.style.transform = 'rotate(360deg)';
   setTimeout(()=>{ btn.style.transform = 'rotate(0deg)'; }, 500);
   BANNED_SHUFFLED = shuffleArray(BANNED_LIST);
-  renderWatchlist();
-loadSideSections();
-window.addEventListener('hashchange', openHashMovie);
-setTimeout(openHashMovie, 250);
+  loadSideSections();
 }
 
 function renderPager(elId, current, totalPages, onClick){
@@ -1024,45 +1011,19 @@ function posterUrl(path){
   return path ? `https://image.tmdb.org/t/p/w342${path}` : 'https://via.placeholder.com/342x513/12161d/8D95A3?text=No+Poster';
 }
 
-function moodMatchScore(m){
-  const ids = m.genre_ids || m.genreIds || [];
-  if(!currentMoodGenres.length || !ids.length) return null;
-  const genreMap = mediaType === 'movie' ? GENRE_MAP : GENRE_MAP_TV;
-  const wanted = currentMoodGenres.map(g => genreMap[g] || g).filter(Boolean);
-  const hits = ids.filter(id => wanted.includes(id)).length;
-  return Math.max(55, Math.min(99, 58 + hits*14 + Math.round((Number(m.rating)||0)%5)));
-}
-function isSaved(id,kind){ return watchlist.some(x => String(x.id)===String(id) && x.kind===(kind||mediaType)); }
-function toggleWatchlist(item, ev){
-  if(ev) ev.stopPropagation();
-  const kind=item.kind||item.mediaKind||mediaType;
-  const idx=watchlist.findIndex(x=>String(x.id)===String(item.id)&&x.kind===kind);
-  if(idx>=0) watchlist.splice(idx,1); else watchlist.unshift({...item,kind});
-  try{localStorage.setItem('moodtalkies-watchlist',JSON.stringify(watchlist.slice(0,100)));}catch(e){}
-  renderWatchlist();
-  document.querySelectorAll(`.watch-btn[data-id="${item.id}"][data-kind="${kind}"]`).forEach(b=>{b.classList.toggle('saved',isSaved(item.id,kind));b.textContent=isSaved(item.id,kind)?'♥':'♡';});
-  showToast(idx>=0?'Watchlist se hata diya':'❤️ Watchlist mein save kar diya');
-}
-function renderWatchlist(){
-  const sec=document.getElementById('watchlistSection'), grid=document.getElementById('watchlistGrid'), count=document.getElementById('watchlistCount');
-  if(!sec||!grid)return;
-  count.textContent=watchlist.length+' SAVED';
-  if(!watchlist.length){sec.classList.remove('show');grid.innerHTML='';return;}
-  sec.classList.add('show');
-  grid.innerHTML=watchlist.map(m=>`<div class="card" onclick="openMovieModal(${m.id}, '${m.kind||'movie'}')"><button class="watch-btn saved" data-id="${m.id}" data-kind="${m.kind||'movie'}" onclick='toggleWatchlist(${JSON.stringify(m)},event)'>♥</button><img class="poster" src="${posterUrl(m.poster)}" alt="${m.title}" loading="lazy"/><div class="perf"></div><div class="card-body"><div class="name">${m.title}</div><div class="meta"><span>${m.year||'—'}</span><span class="rating">★ ${m.rating||'—'}</span></div></div></div>`).join('');
-}
 function renderGrid(elId, items){
   const el = document.getElementById(elId);
   if(!items.length){ el.innerHTML = '<div class="empty">Kuch nahi mila</div>'; return; }
-  el.innerHTML = items.map(m=>{
-    const kind=m.mediaKind||mediaType, saved=isSaved(m.id,kind), score=moodMatchScore(m);
-    return `<div class="card" onclick="openMovieModal(${m.id}, '${kind}')">
-      ${score!==null?`<span class="match-badge">${score}% MOOD MATCH</span>`:''}
-      <button class="watch-btn ${saved?'saved':''}" data-id="${m.id}" data-kind="${kind}" onclick='toggleWatchlist(${JSON.stringify({...m,kind})},event)'>${saved?'♥':'♡'}</button>
+  el.innerHTML = items.map(m=>`
+    <div class="card" onclick="openMovieModal(${m.id}, '${m.mediaKind || mediaType}')">
       <img class="poster" src="${posterUrl(m.poster)}" alt="${m.title}" loading="lazy"/>
-      <div class="perf"></div><div class="card-body"><div class="name">${m.title}</div><div class="meta"><span>${m.year||'—'}</span><span class="rating">★ ${m.rating||'—'}</span></div></div>
-    </div>`;
-  }).join('');
+      <div class="perf"></div>
+      <div class="card-body">
+        <div class="name">${m.title}</div>
+        <div class="meta"><span>${m.year||'—'}</span><span class="rating">★ ${m.rating||'—'}</span></div>
+      </div>
+    </div>
+  `).join('');
 }
 
 function renderBannedGrid(items){
@@ -1185,19 +1146,62 @@ async function fetchAllTrailers(id, key, kind){
   return trailers;
 }
 
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;',"\"":'&quot;'}[c]));
+}
+
+// TMDB returns provider names and a region-level watch link. It does not expose
+// a separate deep-link for every OTT provider, so we use official provider
+// search/deep-link patterns where reliably supported and fall back to the
+// provider's official site. This avoids sending users to third-party sites.
+function getOfficialOTTUrl(providerName, title){
+  const q = encodeURIComponent(title || '');
+  const n = String(providerName || '').toLowerCase();
+  if(n.includes('netflix')) return `https://www.netflix.com/in/search?q=${q}`;
+  if(n.includes('prime video') || n === 'amazon prime video' || n.includes('amazon')) return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${q}`;
+  if(n.includes('apple tv')) return `https://tv.apple.com/in/search?term=${q}`;
+  if(n.includes('youtube')) return `https://www.youtube.com/results?search_query=${q}`;
+  if(n.includes('zee5') || n.includes('zee 5')) return `https://www.zee5.com/search?q=${q}`;
+  if(n.includes('sony liv') || n.includes('sonyliv')) return `https://www.sonyliv.com/search?search=${q}`;
+  if(n.includes('mx player') || n.includes('mxplayer')) return `https://www.mxplayer.in/search?q=${q}`;
+  if(n.includes('jiohotstar') || n.includes('hotstar')) return `https://www.hotstar.com/in/search?q=${q}`;
+  if(n.includes('aha')) return `https://www.aha.video/search?q=${q}`;
+  if(n.includes('lionsgate')) return `https://www.lionsgateplay.com/search?q=${q}`;
+  if(n.includes('mubi')) return `https://mubi.com/en/in/search?q=${q}`;
+  if(n.includes('hoichoi')) return `https://www.hoichoi.tv/search?q=${q}`;
+  if(n.includes('sunnxt')) return `https://www.sunnxt.com/search/${q}`;
+  if(n.includes('eros now') || n.includes('erosnow')) return `https://erosnow.com/search?q=${q}`;
+  if(n.includes('disney+')) return `https://www.disneyplus.com/en-in/search?q=${q}`;
+  if(n.includes('google play')) return `https://play.google.com/store/search?q=${q}&c=movies`;
+  return null;
+}
+
 async function fetchOTT(id, key, kind){
   kind = kind || mediaType;
   try{
     const data = await tmdbFetch(`/${kind}/${id}/watch/providers`, key);
-    const region = (data.results && (data.results.IN || data.results.US)) || null;
+    const region = data.results && data.results.IN;
     if(!region) return [];
-    const all = [...(region.flatrate||[]), ...(region.rent||[]), ...(region.buy||[])];
+    const groups = [
+      ...(region.flatrate || []).map(p => ({...p, offer:'Stream'})),
+      ...(region.free || []).map(p => ({...p, offer:'Free'})),
+      ...(region.ads || []).map(p => ({...p, offer:'Ads'})),
+      ...(region.rent || []).map(p => ({...p, offer:'Rent'})),
+      ...(region.buy || []).map(p => ({...p, offer:'Buy'}))
+    ];
     const seen = new Set();
-    return all.filter(p=>{ if(seen.has(p.provider_name)) return false; seen.add(p.provider_name); return true; }).slice(0,8);
+    return groups.filter(p=>{
+      if(seen.has(p.provider_name)) return false;
+      seen.add(p.provider_name);
+      return true;
+    }).slice(0,10).map(p=>({
+      ...p,
+      tmdbLink: region.link || null
+    }));
   }catch(e){ return []; }
 }
 
-async function openMovieModal(id, kind, fromHash){
+async function openMovieModal(id, kind){
   if(!id) return;
   kind = kind || mediaType;
   const key = getKey();
@@ -1210,12 +1214,11 @@ async function openMovieModal(id, kind, fromHash){
   modal.classList.add('open');
   body.innerHTML = '<div class="spinner"></div>';
   document.body.style.overflow = 'hidden';
-  if(!fromHash) history.pushState({moodtalkiesModal:true}, '', `#movie/${kind}/${id}`);
+  history.pushState({moodtalkiesModal:true}, '');
 
   try{
     const m = await tmdbFetch(`/${kind}/${id}?append_to_response=credits`, key);
     const title = m.title || m.name;
-    currentModalMovie = {id,kind,title,year:((m.release_date||m.first_air_date||'')).slice(0,4),rating:m.vote_average?m.vote_average.toFixed(1):'',poster:m.poster_path};
     const genres = (m.genres || []).map(g=>g.name).join(', ') || '—';
     const year = ((m.release_date || m.first_air_date || '')).slice(0,4) || '—';
     const castNames = (m.credits && m.credits.cast || []).slice(0,6).map(c=>c.name).join(', ') || 'Info uplabdh nahi hai';
@@ -1226,10 +1229,6 @@ async function openMovieModal(id, kind, fromHash){
       <img class="modal-poster" src="${posterUrl(m.poster_path)}" alt="${title}"/>
       <div class="modal-content">
         <div class="modal-title">${title}</div>
-        <div class="modal-actions">
-          <button class="modal-action ${isSaved(id,kind)?'saved':''}" id="modalWatchBtn" onclick="toggleModalWatch(${id},'${kind}')">${isSaved(id,kind)?'♥ Saved':'♡ Save to Watchlist'}</button>
-          <button class="modal-action" onclick="shareMovie(${id},'${kind}','${encodeURIComponent(title)}')">↗ Share</button>
-        </div>
         <div class="modal-meta-row">
           <span>📅 ${year}</span>
           <span>★ ${rating}</span>
@@ -1258,9 +1257,16 @@ async function openMovieModal(id, kind, fromHash){
     fetchOTT(id, key, kind).then(providers=>{
       const el = document.getElementById('ottList');
       if(!el) return;
-      el.innerHTML = providers.length ? providers.map(p=>
-        `<span class="ott-pill">${p.provider_name}</span>`
-      ).join('') : '<span class="empty">India mein OTT info uplabdh nahi hai</span>';
+      el.innerHTML = providers.length ? providers.map(p=>{
+        const direct = getOfficialOTTUrl(p.provider_name, title);
+        // If an official provider-specific URL is known, use it. Otherwise use
+        // TMDB's region watch link as the safe discovery fallback.
+        const url = direct || p.tmdbLink || '#';
+        const disabled = url === '#';
+        return disabled
+          ? `<span class="ott-pill" title="OTT link available nahi hai">${escapeHtml(p.provider_name)} <span class="ott-arrow">↗</span></span>`
+          : `<a class="ott-pill" href="${url}" target="_blank" rel="noopener noreferrer" title="${direct ? 'Official OTT search/watch page' : 'TMDB watch options'}">${escapeHtml(p.provider_name)} <span class="ott-arrow">↗</span></a>`;
+      }).join('') : '<span class="empty">India mein OTT info uplabdh nahi hai</span>';
     });
 
   }catch(e){
@@ -1268,35 +1274,9 @@ async function openMovieModal(id, kind, fromHash){
   }
 }
 
-function toggleModalWatch(id,kind){
-  if(!currentModalMovie)return;
-  toggleWatchlist({...currentModalMovie,kind});
-  const b=document.getElementById('modalWatchBtn'); if(b){const saved=isSaved(id,kind);b.classList.toggle('saved',saved);b.textContent=saved?'♥ Saved':'♡ Save to Watchlist';}
-}
-async function shareMovie(id,kind,titleEncoded){
-  const title=decodeURIComponent(titleEncoded||'MoodTalkies movie');
-  const url=`${location.origin}${location.pathname}#movie/${kind}/${id}`;
-  try{ if(navigator.share) await navigator.share({title:`${title} — MoodTalkies`,text:`${title} on MoodTalkies`,url}); else {await navigator.clipboard.writeText(url);showToast('🔗 Share link copied');} }
-  catch(e){ if(e.name!=='AbortError'){try{await navigator.clipboard.writeText(url);showToast('🔗 Share link copied')}catch(_){showToast(url)}}}
-}
-function showToast(text){const t=document.getElementById('shareToast');if(!t)return;t.textContent=text;t.classList.add('show');clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.classList.remove('show'),2200)}
-function setMoodChip(text){document.getElementById('moodInput').value=text;document.getElementById('moodInput').focus();navTo('search')}
-function navTo(where){
-  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
-  const map={home:'navHome',search:'navSearch',watch:'navWatch',upcoming:'navUpcoming'};document.getElementById(map[where])?.classList.add('active');
-  if(where==='home') window.scrollTo({top:0,behavior:'smooth'});
-  if(where==='search') document.getElementById('moodInput')?.scrollIntoView({behavior:'smooth',block:'center'});
-  if(where==='watch'){renderWatchlist();document.getElementById('watchlistSection')?.scrollIntoView({behavior:'smooth',block:'start'});}
-  if(where==='upcoming') document.getElementById('upcomingGrid')?.closest('section')?.scrollIntoView({behavior:'smooth',block:'start'});
-}
-function openHashMovie(){
-  const m=location.hash.match(/^#movie\/(movie|tv)\/(\d+)$/); if(m) openMovieModal(Number(m[2]),m[1],true);
-}
-
 function closeMovieModal(){
   document.getElementById('movieModal').classList.remove('open');
   document.body.style.overflow = '';
-  if(location.hash.startsWith('#movie/')) history.replaceState({},'',location.pathname+location.search);
 }
 
 // intercept the device/browser back button: if the modal is open, close it
@@ -1339,7 +1319,6 @@ async function findMovies(){
     const strongMatch = titleSearch.results && titleSearch.results.length > 0 ? titleSearch.results[0] : null;
 
     if(strongMatch){
-      currentMoodGenres = (strongMatch.genre_ids || []).map(id=>Object.keys(GENRE_MAP).find(k=>GENRE_MAP[k]===id)).filter(Boolean);
       const details = await tmdbFetch(`/${mediaType}/${strongMatch.id}?append_to_response=similar,credits`, key);
       const matchTitle = strongMatch.title || strongMatch.name;
 
@@ -1384,7 +1363,6 @@ async function findMovies(){
       const personMatch = personSearch.results && personSearch.results.find(p => p.known_for_department === 'Acting' && p.popularity > 1);
 
       if(personMatch){
-        currentMoodGenres = [];
         const creditsPath = mediaType === 'movie' ? 'movie_credits' : 'tv_credits';
         const credits = await tmdbFetch(`/person/${personMatch.id}/${creditsPath}`, key);
         const cast = (credits.cast || []).filter(m => m.title || m.name);
@@ -1421,7 +1399,6 @@ async function findMovies(){
       } else {
       // Step 3: not a title, not an actor — treat as a mood, with variety so results don't repeat
       const interpreted = interpretMood(mood);
-      currentMoodGenres = interpreted.genres;
       const activeGenreMap = mediaType === 'movie' ? GENRE_MAP : GENRE_MAP_TV;
       const genreIds = interpreted.genres.map(g=>activeGenreMap[g.toLowerCase()]).filter(Boolean).join(',');
       const lang = document.getElementById('langFilter').value;
