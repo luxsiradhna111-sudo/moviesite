@@ -333,7 +333,7 @@
   .download-app:hover{background:var(--teal);color:#0C0F14;}
 
   .theme-toggle{
-    position:absolute;top:16px;right:16px;
+    position:absolute !important;top:16px;right:16px;
     background:rgba(255,255,255,0.08);
     -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
     border:1px solid rgba(255,255,255,0.15);
@@ -375,7 +375,7 @@
   .input-with-mic{position:relative;}
   .input-with-mic textarea{padding-right:52px;}
   .mic-btn{
-    position:absolute;right:8px;bottom:8px;
+    position:absolute !important;right:8px;bottom:8px;
     width:36px;height:36px;border-radius:50%;
     background:rgba(255,255,255,0.08);
     -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
@@ -628,8 +628,37 @@
   .trailer-pill:hover::before, .ott-pill:hover::before, button:hover::before, .pg-btn:hover::before, .download-app:hover::before{transform:translateX(120%);}
   .trailer-pill:hover, .ott-pill:hover{transform:translateY(-2px) scale(1.025);border-color:rgba(255,255,255,.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 10px 25px -12px rgba(0,0,0,.9);}
   .trailer-pill:active, .ott-pill:active, button:active, .pg-btn:active, .download-app:active, .mt-btn:active, .theme-toggle:active, .mic-btn:active{transform:scale(.93);transition-duration:.08s;}
-  button, .pg-btn, .mt-btn, .theme-toggle, .mic-btn, .download-app{position:relative;overflow:hidden;}
+  button, .pg-btn, .mt-btn, .download-app{position:relative;overflow:hidden;}
+  .theme-toggle{position:absolute;overflow:hidden;}
+  .mic-btn{position:absolute;overflow:hidden;}
   html[data-theme="light"] .trailer-pill, html[data-theme="light"] .ott-pill, html[data-theme="light"] button, html[data-theme="light"] .pg-btn{background:linear-gradient(135deg,rgba(255,255,255,.62),rgba(255,255,255,.28));border-color:rgba(255,255,255,.75);}
+  /* Bottom Liquid Glass navigation */
+  body{padding-bottom:92px;}
+  .bottom-nav{
+    position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:90;
+    width:min(430px,calc(100vw - 28px));padding:7px;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+    background:rgba(255,255,255,.075);
+    -webkit-backdrop-filter:blur(28px) saturate(190%);backdrop-filter:blur(28px) saturate(190%);
+    border:1px solid rgba(255,255,255,.18);border-radius:24px;
+    box-shadow:0 16px 40px -18px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  .bottom-nav-item{
+    position:relative;overflow:hidden;border:1px solid transparent;border-radius:18px;
+    min-height:48px;background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.035));
+    color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.5px;
+    cursor:pointer;transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .18s ease,color .18s ease,border-color .18s ease;
+  }
+  .bottom-nav-item span{display:block;font-size:18px;line-height:20px;margin-bottom:2px;}
+  .bottom-nav-item.active{color:var(--gold);border-color:rgba(201,164,97,.35);background:linear-gradient(135deg,rgba(201,164,97,.18),rgba(255,255,255,.05));}
+  .bottom-nav-item:active{transform:scale(.91);}
+  html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.58);border-color:rgba(255,255,255,.8);}
+
+  /* Modal content appears as one complete glass panel, not piece-by-piece */
+  .modal-content{animation:modalContentIn .22s ease-out both;}
+  @keyframes modalContentIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .modal-loading{min-height:240px;display:flex;align-items:center;justify-content:center;}
+
   @media (prefers-reduced-motion:reduce){
     .trailer-pill,.ott-pill,button,.pg-btn,.download-app{transition:none!important;}
     .trailer-pill::before,.ott-pill::before,button::before,.pg-btn::before,.download-app::before{display:none;}
@@ -652,13 +681,7 @@
     <div class="splash-sub">by Vishesh Bainsla</div>
   </div>
 </div>
-<script>
-  // Runs immediately (before rest of page) so a repeat view this session never flashes the splash
-  if(sessionStorage.getItem('mt_splash_shown')){
-    document.getElementById('splashScreen').style.display = 'none';
-    window.__skipSplash = true;
-  }
-</script>
+
 
 <div class="bg-blobs"><span></span><span></span><span></span><span></span><span></span></div>
 
@@ -768,6 +791,13 @@
 </footer>
 
 </div>
+
+
+<nav class="bottom-nav" aria-label="Main navigation">
+  <button class="bottom-nav-item active" id="navHome" onclick="bottomNavHome()"><span>⌂</span>HOME</button>
+  <button class="bottom-nav-item" id="navWatchlist" onclick="bottomNavWatchlist()"><span>♡</span>WATCHLIST</button>
+  <button class="bottom-nav-item" id="navLike" onclick="bottomNavLike()"><span>♥</span>LIKED</button>
+</nav>
 
 <div id="movieModal" class="modal-backdrop" onclick="if(event.target===this) history.back()">
   <div class="modal-box">
@@ -1209,15 +1239,21 @@ async function openMovieModal(id, kind){
   const body = document.getElementById('modalBody');
   const box = modal.querySelector('.modal-box');
   box.style.animation = 'none';
-  void box.offsetWidth; // force reflow so the animation replays
+  void box.offsetWidth;
   box.style.animation = '';
   modal.classList.add('open');
-  body.innerHTML = '<div class="spinner"></div>';
   document.body.style.overflow = 'hidden';
+  body.innerHTML = '<div class="modal-content modal-loading"><div class="spinner"></div></div>';
   history.pushState({moodtalkiesModal:true}, '');
 
   try{
-    const m = await tmdbFetch(`/${kind}/${id}?append_to_response=credits`, key);
+    // Fetch everything together so the modal renders as one complete screen.
+    const [m, trailers, providers] = await Promise.all([
+      tmdbFetch(`/${kind}/${id}?append_to_response=credits`, key),
+      fetchAllTrailers(id, key, kind).catch(()=>[]),
+      fetchOTT(id, key, kind).catch(()=>[])
+    ]);
+
     const title = m.title || m.name;
     const genres = (m.genres || []).map(g=>g.name).join(', ') || '—';
     const year = ((m.release_date || m.first_air_date || '')).slice(0,4) || '—';
@@ -1225,51 +1261,38 @@ async function openMovieModal(id, kind){
     const rating = m.vote_average ? m.vote_average.toFixed(1) : '—';
     const runtime = m.runtime || (m.episode_run_time && m.episode_run_time[0]);
 
+    const trailerHtml = trailers.length ? trailers.map(t=>
+      `<a class="trailer-pill" href="https://www.youtube.com/watch?v=${t.key}" target="_blank" rel="noopener noreferrer">▶ ${escapeHtml(t.label)}</a>`
+    ).join('') : '<span class="empty">Koi trailer nahi mila</span>';
+
+    const ottHtml = providers.length ? providers.map(p=>{
+      const direct = getOfficialOTTUrl(p.provider_name, title);
+      const url = direct || p.tmdbLink || '#';
+      const disabled = url === '#';
+      return disabled
+        ? `<span class="ott-pill" title="OTT link available nahi hai">${escapeHtml(p.provider_name)} <span class="ott-arrow">↗</span></span>`
+        : `<a class="ott-pill" href="${url}" target="_blank" rel="noopener noreferrer" title="${direct ? 'Official OTT search/watch page' : 'TMDB watch options'}">${escapeHtml(p.provider_name)} <span class="ott-arrow">↗</span></a>`;
+    }).join('') : '<span class="empty">India mein OTT info uplabdh nahi hai</span>';
+
     body.innerHTML = `
-      <img class="modal-poster" src="${posterUrl(m.poster_path)}" alt="${title}"/>
+      <img class="modal-poster" src="${posterUrl(m.poster_path)}" alt="${escapeHtml(title)}"/>
       <div class="modal-content">
-        <div class="modal-title">${title}</div>
+        <div class="modal-title">${escapeHtml(title)}</div>
         <div class="modal-meta-row">
-          <span>📅 ${year}</span>
-          <span>★ ${rating}</span>
-          <span>🎭 ${genres}</span>
+          <span>📅 ${year}</span><span>★ ${rating}</span><span>🎭 ${escapeHtml(genres)}</span>
           ${runtime ? `<span>⏱ ${runtime} min</span>` : ''}
         </div>
         <div class="modal-section-label">Cast</div>
-        <div class="modal-cast">${castNames}</div>
+        <div class="modal-cast">${escapeHtml(castNames)}</div>
         <div class="modal-section-label">Description</div>
-        <div class="modal-overview">${m.overview || 'Description uplabdh nahi hai.'}</div>
+        <div class="modal-overview">${escapeHtml(m.overview || 'Description uplabdh nahi hai.')}</div>
         <div class="modal-section-label">Trailers</div>
-        <div class="trailer-list" id="trailerList"><span class="empty">Load ho raha hai...</span></div>
+        <div class="trailer-list">${trailerHtml}</div>
         <div class="modal-section-label">Kahan Dekhein (OTT)</div>
-        <div class="ott-list" id="ottList"><span class="empty">Load ho raha hai...</span></div>
-      </div>
-    `;
-
-    fetchAllTrailers(id, key, kind).then(trailers=>{
-      const el = document.getElementById('trailerList');
-      if(!el) return;
-      el.innerHTML = trailers.length ? trailers.map(t=>
-        `<a class="trailer-pill" href="https://www.youtube.com/watch?v=${t.key}" target="_blank">▶ ${t.label}</a>`
-      ).join('') : '<span class="empty">Koi trailer nahi mila</span>';
-    });
-
-    fetchOTT(id, key, kind).then(providers=>{
-      const el = document.getElementById('ottList');
-      if(!el) return;
-      el.innerHTML = providers.length ? providers.map(p=>{
-        const direct = getOfficialOTTUrl(p.provider_name, title);
-        // If an official provider-specific URL is known, use it. Otherwise use
-        // TMDB's region watch link as the safe discovery fallback.
-        const url = direct || p.tmdbLink || '#';
-        const disabled = url === '#';
-        return disabled
-          ? `<span class="ott-pill" title="OTT link available nahi hai">${escapeHtml(p.provider_name)} <span class="ott-arrow">↗</span></span>`
-          : `<a class="ott-pill" href="${url}" target="_blank" rel="noopener noreferrer" title="${direct ? 'Official OTT search/watch page' : 'TMDB watch options'}">${escapeHtml(p.provider_name)} <span class="ott-arrow">↗</span></a>`;
-      }).join('') : '<span class="empty">India mein OTT info uplabdh nahi hai</span>';
-    });
-
+        <div class="ott-list">${ottHtml}</div>
+      </div>`;
   }catch(e){
+    console.error('Movie modal error:',e);
     body.innerHTML = '<div class="modal-content"><div class="empty">Details load nahi hui — dobara try karo.</div></div>';
   }
 }
@@ -1518,6 +1541,27 @@ function setMediaType(type){
   }, {passive:true});
 })();
 
+// ---------- Bottom navigation ----------
+function setNavActive(id){
+  document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById(id); if(el) el.classList.add('active');
+}
+function bottomNavHome(){
+  setNavActive('navHome');
+  document.getElementById('moodInput')?.focus();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function bottomNavWatchlist(){
+  setNavActive('navWatchlist');
+  const saved=JSON.parse(localStorage.getItem('mt_watchlist')||'[]');
+  alert(saved.length ? `Watchlist mein ${saved.length} title saved hai.` : 'Watchlist abhi empty hai. Movie details se save karna next step hai.');
+}
+function bottomNavLike(){
+  setNavActive('navLike');
+  const liked=JSON.parse(localStorage.getItem('mt_liked')||'[]');
+  alert(liked.length ? `${liked.length} liked title saved hai.` : 'Abhi koi liked movie nahi hai.');
+}
+
 // ---------- Voice search ----------
 function startVoiceSearch(){
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1543,10 +1587,9 @@ loadSideSections();
 // ---------- Liquid Glass boot screen ----------
 (function initSplash(){
   const splash = document.getElementById('splashScreen');
-  if(!splash || window.__skipSplash) return; // already shown this session
+  if(!splash) return;
 
   document.body.style.overflow = 'hidden';
-  sessionStorage.setItem('mt_splash_shown', '1');
 
   // animate the liquid displacement settling from rippled -> crisp text
   const dispMap = document.getElementById('dispMap');
